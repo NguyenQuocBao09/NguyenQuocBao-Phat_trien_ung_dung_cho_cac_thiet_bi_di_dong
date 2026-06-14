@@ -3,6 +3,7 @@ import 'package:font_end/models/product.dart';
 import 'package:font_end/services/favorite_service.dart';
 import 'package:font_end/services/cart_service.dart';
 import 'package:font_end/product_detail_screen.dart';
+import 'package:font_end/main_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -13,11 +14,23 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   bool isGridView = false;
+  bool _isAscending = true;
   late Future<List<Product>> _favoritesFuture;
 
   @override
   void initState() {
     super.initState();
+    _loadFavorites();
+    FavoriteService.favoritesChangedNotifier.addListener(_onFavoritesChanged);
+  }
+
+  @override
+  void dispose() {
+    FavoriteService.favoritesChangedNotifier.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
     _loadFavorites();
   }
 
@@ -52,6 +65,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+              (route) => false,
+            );
+          },
+        ),
         title: const Text('Favorites', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 34)),
         centerTitle: false,
         actions: [
@@ -91,12 +114,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     Text('Filters', style: TextStyle(fontSize: 14)),
                   ],
                 ),
-                Row(
-                  children: const [
-                    Icon(Icons.swap_vert, size: 20),
-                    SizedBox(width: 4),
-                    Text('Price: lowest to high', style: TextStyle(fontSize: 14)),
-                  ],
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isAscending = !_isAscending;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.swap_vert, size: 20),
+                      const SizedBox(width: 4),
+                      Text(_isAscending ? 'Price: lowest to high' : 'Price: highest to low', style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: Icon(isGridView ? Icons.view_list : Icons.view_module, size: 24),
@@ -143,7 +173,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   );
                 }
 
-                final favorites = snapshot.data!;
+                final favorites = List<Product>.from(snapshot.data!);
+                favorites.sort((a, b) {
+                  final priceA = a.salePrice ?? a.price ?? 0.0;
+                  final priceB = b.salePrice ?? b.price ?? 0.0;
+                  return _isAscending ? priceA.compareTo(priceB) : priceB.compareTo(priceA);
+                });
 
                 if (isGridView) {
                   return RefreshIndicator(

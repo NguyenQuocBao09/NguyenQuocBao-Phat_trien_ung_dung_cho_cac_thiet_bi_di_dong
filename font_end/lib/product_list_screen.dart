@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/product_service.dart';
 import 'models/product.dart';
 import 'product_detail_screen.dart';
+import 'services/favorite_service.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String categoryName;
@@ -18,11 +19,64 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final List<String> chips = ['T-shirts', 'Crop tops', 'Sleeveless', 'Blouses'];
 
   late Future<List<Product>> _productsFuture;
+  Set<String> _favoriteProductIds = {};
 
   @override
   void initState() {
     super.initState();
     _productsFuture = ProductService().fetchTopRatedProductsByCategory(widget.categoryName);
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final favorites = await FavoriteService().getFavorites();
+      if (mounted) {
+        setState(() {
+          _favoriteProductIds = favorites.where((p) => p.id != null).map((p) => p.id!).toSet();
+        });
+      }
+    } catch (e) {
+      print('Lỗi tải favorites: $e');
+    }
+  }
+
+  void _toggleFavorite(String productId) async {
+    final isCurrentlyFavorite = _favoriteProductIds.contains(productId);
+    setState(() {
+      if (isCurrentlyFavorite) {
+        _favoriteProductIds.remove(productId);
+      } else {
+        _favoriteProductIds.add(productId);
+      }
+    });
+
+    bool success;
+    if (isCurrentlyFavorite) {
+      success = await FavoriteService().removeFavorite(productId);
+    } else {
+      success = await FavoriteService().addFavorite(productId);
+    }
+
+    if (!success && mounted) {
+      setState(() {
+        if (isCurrentlyFavorite) {
+          _favoriteProductIds.add(productId);
+        } else {
+          _favoriteProductIds.remove(productId);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lỗi cập nhật yêu thích')),
+      );
+    } else if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isCurrentlyFavorite ? 'Đã xóa khỏi danh sách yêu thích' : 'Đã thêm vào danh sách yêu thích'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -110,7 +164,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 setState(() {
                   _productsFuture = ProductService().fetchTopRatedProductsByCategory(widget.categoryName);
                 });
-                await _productsFuture;
+                await Future.wait([_productsFuture, _loadFavorites()]);
               },
               child: FutureBuilder<List<Product>>(
                 future: _productsFuture,
@@ -267,25 +321,36 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     Positioned(
                       bottom: -16,
                       right: 0,
-                      child: Container(
-                        margin: const EdgeInsets.all(8),
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            )
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.favorite_border,
-                          color: Colors.grey,
-                          size: 20,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (product.id != null) {
+                            _toggleFavorite(product.id!);
+                          }
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.all(8),
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: Icon(
+                            product.id != null && _favoriteProductIds.contains(product.id!)
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: product.id != null && _favoriteProductIds.contains(product.id!)
+                                ? const Color(0xFFDB3022)
+                                : Colors.grey,
+                            size: 20,
+                          ),
                         ),
                       ),
                     )
@@ -366,24 +431,35 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 Positioned(
                   bottom: -16,
                   right: 0,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.favorite_border,
-                      color: Colors.grey,
-                      size: 20,
+                  child: GestureDetector(
+                    onTap: () {
+                      if (product.id != null) {
+                        _toggleFavorite(product.id!);
+                      }
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: Icon(
+                        product.id != null && _favoriteProductIds.contains(product.id!)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: product.id != null && _favoriteProductIds.contains(product.id!)
+                            ? const Color(0xFFDB3022)
+                            : Colors.grey,
+                        size: 20,
+                      ),
                     ),
                   ),
                 )

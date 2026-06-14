@@ -6,7 +6,7 @@ import 'package:font_end/auth_service.dart';
 
 class ProductService {
   // Dùng chung IP với AuthService để gọi xuống Spring Boot
-  static const String baseUrl = "http://192.168.1.29:8080/api/products";
+  static const String baseUrl = "http://172.16.7.193:8080/api/products";
 
   Future<List<Product>> fetchNewProducts() async {
     final url = Uri.parse('$baseUrl/new');
@@ -53,7 +53,7 @@ class ProductService {
   // Lấy đánh giá của sản phẩm
   Future<List<Review>> fetchReviews(String productId) async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.29:8080/api/reviews/$productId'));
+      final response = await http.get(Uri.parse('http://172.16.7.193:8080/api/reviews/$productId'));
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(utf8.decode(response.bodyBytes));
@@ -69,7 +69,7 @@ class ProductService {
   }
 
   Future<Review?> addOrUpdateReview(String productId, double rating, String content, List<String> images) async {
-    final url = Uri.parse('http://192.168.1.29:8080/api/reviews');
+    final url = Uri.parse('http://172.16.7.193:8080/api/reviews');
     try {
       final response = await http.post(
         url,
@@ -100,7 +100,7 @@ class ProductService {
 
   Future<bool> hasUserReviewed(String productId) async {
     if (AuthService.jwtToken == null) return false;
-    final url = Uri.parse('http://192.168.1.29:8080/api/reviews/check/$productId');
+    final url = Uri.parse('http://172.16.7.193:8080/api/reviews/check/$productId');
     try {
       final response = await http.get(
         url,

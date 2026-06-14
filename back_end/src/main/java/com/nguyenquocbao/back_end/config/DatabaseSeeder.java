@@ -64,57 +64,59 @@ public class DatabaseSeeder implements CommandLineRunner {
             "wc1.jpg", "wc2.jpg", "wc3.jpg", "wc4.jpg", "wc5.jpg", "wc6.jpg", 
             "blouse4.jpg", "blouse5.jpg", "blouse6.jpg", "blouses1.jpg", "blouses2.jpg", "blouses3.jpg", "blouses7.jpg", 
             "wc15.jpg", "wc16.jpg", "wc17.jpg", "wc18.jpg", "wc19.jpg", "wc20.jpg", 
-            "dress1.jpg", "dress2.jpg", "dress3.jpg", "dress4.jpg", "dress5.jpg", "dress6.jpg", "wc3.jpg", 
-            "wc4.jpg", "wc5.jpg", "wc6.jpg", "wc7.jpg", "new_dress_1.png", "new_dress_2.png", 
-            "new_jacket_1.png", "new_jacket_2.png", "new_pants_1.png", "new_pants_2.png", "new_skirt_1.png", 
-            "new_skirt_2.png", "new_top_1.png", "new_top_2.png", "wc1.jpg", "wc2.jpg", "wc3.jpg", 
-            "wc4.jpg", "wc5.jpg", "red_blouse.png", "sale_bag_1.png", "sale_item_10.png", "sale_item_4.png", 
-            "sale_item_5.png", "sale_item_6.png", "sale_item_7.png", "sale_item_8.png", "sale_item_9.png", 
-            "sale_shoes_1.png", "sale_shoes_2.png", "wc8.jpg", "wc9.jpg", "wc10.jpg", "wc11.jpg", 
-            "skirt1.jpg", "skirt2.jpg", "skirt3.jpg", "skirt4.jpg", "skirt5.jpg", "sportdress.jpg", "wc20.jpg", 
+            "dress1.jpg", "dress2.jpg", "dress3.jpg", "dress4.jpg", "dress5.jpg", "dress6.jpg", "blazer6.jpg", 
+            "blazer7.jpg", "blazer8.jpg", "blazer9.jpg", "wc7.jpg", "new_dress_1.png", "new_dress_2.png", 
+            "womens_fashion_1.png", "womens_fashion_2.png", "womens_fashion_3.png", "womens_fashion_4.png", "new_skirt_1.png", 
+            "new_skirt_2.png", "knitwear6.jpg", "pants1.jpg", "womens_fashion_5.png", "womens_fashion_6.png", "womens_fashion_7.png", 
+            "womens_fashion_8.png", "womens_fashion_9.png", "red_blouse.png", "sale_bag_1.png", "outerwear6.jpg", "womens_fashion_10.png", 
+            "knitwear7.jpg", "knitwear8.jpg", "knitwear9.jpg", "dress7.jpg", "dress8.jpg", 
+            "outerwear7.jpg", "outerwear8.jpg", "wc8.jpg", "wc9.jpg", "wc10.jpg", "wc11.jpg", 
+            "skirt1.jpg", "skirt2.jpg", "skirt3.jpg", "skirt4.jpg", "skirt5.jpg", "sportdress.jpg", "blazer10.jpg", 
             "wc12.jpg", "wc13.jpg", "wc14.jpg", "womens_top_casual.png", "womens_top_floral.png", 
             "womens_top_silk.png"
         };
 
-        for (int i = 0; i < images.length; i++) {
-            String img = images[i];
-            String name = formatProductName(img);
-            
-            Product p = Product.builder()
-                .slug(img.replace(".jpg", "").replace(".png", "") + "-" + UUID.randomUUID().toString().substring(0, 8))
-                .name(name)
-                .sku("SKU-" + i)
-                .salePrice(50.0 + (i % 50))
-                .comparePrice(i % 2 == 0 ? null : 60.0 + (i % 50))
-                .buyingPrice(30.0)
-                .quantity(100)
-                .shortDescription("This is " + name)
-                .description("Detailed description for " + name)
-                .productType("Apparel")
-                .published(true)
-                .disableOutOfStock(false)
-                .rating(4.5)
-                .reviewCount(10 + i)
-                .tags(Set.of(i % 2 == 0 ? newTag : saleTag))
-                .build();
-            
-            productRepository.save(p);
+        if (productRepository.count() == 0) {
+            for (int i = 0; i < images.length; i++) {
+                String img = images[i];
+                String name = formatProductName(img);
+                
+                Product p = Product.builder()
+                    .slug(img.replace(".jpg", "").replace(".png", "") + "-" + UUID.randomUUID().toString().substring(0, 8))
+                    .name(name)
+                    .sku("SKU-" + i)
+                    .salePrice(50.0 + (i % 50))
+                    .comparePrice(i % 2 == 0 ? null : 60.0 + (i % 50))
+                    .buyingPrice(30.0)
+                    .quantity(100)
+                    .shortDescription("This is " + name)
+                    .description("Detailed description for " + name)
+                    .productType("Apparel")
+                    .published(true)
+                    .disableOutOfStock(false)
+                    .rating(4.5)
+                    .reviewCount(10 + i)
+                    .tags(Set.of(i % 2 == 0 ? newTag : saleTag))
+                    .build();
+                
+                productRepository.save(p);
 
-            Gallery g = Gallery.builder()
-                .product(p)
-                .image("assets/" + img)
-                .placeholder("assets/" + img)
-                .isThumbnail(true)
-                .build();
-            
-            galleryRepository.save(g);
+                Gallery g = Gallery.builder()
+                    .product(p)
+                    .image("assets/" + img)
+                    .placeholder("assets/" + img)
+                    .isThumbnail(true)
+                    .build();
+                
+                galleryRepository.save(g);
 
-            ProductCategory pc = ProductCategory.builder()
-                .product(p)
-                .category(categories.get(i % categories.size()))
-                .build();
-            
-            productCategoryRepository.save(pc);
+                ProductCategory pc = ProductCategory.builder()
+                    .product(p)
+                    .category(categories.get(i % categories.size()))
+                    .build();
+                
+                productCategoryRepository.save(pc);
+            }
         }
 
         // Seed Users

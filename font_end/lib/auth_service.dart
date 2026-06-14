@@ -6,8 +6,8 @@ class AuthService {
   static String? userName;
   static String? userEmail;
   static String? userPhotoUrl;
-  // ⚠️ THAY ĐỔI IP NÀY THÀNH IP MẠNG WI-FI THẬT CỦA MÁY TÍNH BẠN (Xem lại ipconfig)
-  static const String baseUrl = "http://192.168.1.29:8080/api/auth";
+  // THAY ĐỔI IP NÀY THÀNH IP MẠNG WI-FI THẬT CỦA MÁY TÍNH BẠN (Xem lại ipconfig)
+  static const String baseUrl = "http://172.16.7.193:8080/api/auth";
 
   // 1. Logic gọi API Đăng ký tài khoản
   Future<String?> register(String name, String email, String password) async {

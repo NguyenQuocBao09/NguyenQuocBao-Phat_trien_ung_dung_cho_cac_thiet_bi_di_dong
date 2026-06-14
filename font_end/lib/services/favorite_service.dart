@@ -1,10 +1,18 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:font_end/models/product.dart';
 import 'package:font_end/auth_service.dart';
 
 class FavoriteService {
-  static const String baseUrl = "http://192.168.1.29:8080/api/favorites";
+  static const String baseUrl = "http://172.16.7.193:8080/api/favorites";
+
+  // Global notifier to trigger UI updates across screens when favorites change
+  static final ValueNotifier<int> favoritesChangedNotifier = ValueNotifier<int>(0);
+
+  static void notifyFavoritesChanged() {
+    favoritesChangedNotifier.value++;
+  }
 
   // Lấy danh sách sản phẩm yêu thích
   Future<List<Product>> getFavorites() async {
@@ -20,13 +28,8 @@ class FavoriteService {
       );
 
       if (response.statusCode == 200) {
-        // Dữ liệu giả định trả về list các Product hoặc một Wrapper chứa Product
         List<dynamic> body = jsonDecode(utf8.decode(response.bodyBytes));
-        return body.map((dynamic item) {
-          // Thường thì bảng Favorites sẽ chứa các thông tin của Product
-          // Giả sử API trả về trực tiếp mảng Product:
-          return Product.fromJson(item);
-        }).toList();
+        return body.map((dynamic item) => Product.fromJson(item)).toList();
       } else {
         print("Lỗi lấy favorites: ${response.statusCode}");
       }
@@ -49,7 +52,9 @@ class FavoriteService {
         },
       );
 
-      return response.statusCode == 200 || response.statusCode == 201;
+      bool success = response.statusCode == 200 || response.statusCode == 201;
+      if (success) notifyFavoritesChanged();
+      return success;
     } catch (e) {
       print("Exception thêm favorite: $e");
     }
@@ -69,7 +74,9 @@ class FavoriteService {
         },
       );
 
-      return response.statusCode == 200 || response.statusCode == 204;
+      bool success = response.statusCode == 200 || response.statusCode == 204;
+      if (success) notifyFavoritesChanged();
+      return success;
     } catch (e) {
       print("Exception xóa favorite: $e");
     }

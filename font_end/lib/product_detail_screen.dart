@@ -27,6 +27,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     // Using new products as a placeholder for "You can also like this"
     _relatedProductsFuture = ProductService().fetchNewProducts();
     _checkFavoriteStatus();
+    FavoriteService.favoritesChangedNotifier.addListener(_onFavoritesChanged);
+  }
+
+  void _onFavoritesChanged() {
+    _checkFavoriteStatus();
+  }
+
+  @override
+  void dispose() {
+    FavoriteService.favoritesChangedNotifier.removeListener(_onFavoritesChanged);
+    super.dispose();
   }
 
   void _checkFavoriteStatus() async {

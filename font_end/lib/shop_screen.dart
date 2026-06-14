@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'sub_category_screen.dart';
 
 class ShopScreen extends StatelessWidget {
-  const ShopScreen({super.key});
+  final VoidCallback? onBackToHome;
+  const ShopScreen({super.key, this.onBackToHome});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,11 @@ class ShopScreen extends StatelessWidget {
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-            onPressed: () {},
+            onPressed: () {
+              if (onBackToHome != null) {
+                onBackToHome!();
+              }
+            },
           ),
           actions: [
             IconButton(

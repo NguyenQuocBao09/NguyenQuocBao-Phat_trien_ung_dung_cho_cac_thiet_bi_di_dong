@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _newProductsFuture = _productService.fetchNewProducts();
     _saleProductsFuture = _productService.fetchSaleProducts();
     _loadFavorites();
+    FavoriteService.favoritesChangedNotifier.addListener(_onFavoritesChanged);
 
     _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
       if (_currentSlide < 2) {
@@ -46,10 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _onFavoritesChanged() {
+    _loadFavorites();
+  }
+
   @override
   void dispose() {
     _timer.cancel();
     _pageController.dispose();
+    FavoriteService.favoritesChangedNotifier.removeListener(_onFavoritesChanged);
     super.dispose();
   }
 
@@ -585,13 +591,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 300,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/mh.jpg'),
+                    image: AssetImage('assets/womens_hoodie_new.png'),
                     fit: BoxFit.cover,
                   ),
                 ),
                 alignment: Alignment.center,
                 child: const Text(
-                  'Men\'s\nhoodies',
+                  'Women\'s\nCoats',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,

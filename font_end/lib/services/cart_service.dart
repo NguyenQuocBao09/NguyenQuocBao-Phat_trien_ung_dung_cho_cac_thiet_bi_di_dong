@@ -5,7 +5,7 @@ import 'package:font_end/auth_service.dart';
 import 'package:font_end/models/cart_item.dart';
 
 class CartService extends ChangeNotifier {
-  static const String baseUrl = "http://192.168.1.29:8080/api/cart";
+  static const String baseUrl = "http://172.16.7.193:8080/api/cart";
   List<CartItem> _items = [];
 
   List<CartItem> get items => _items;
