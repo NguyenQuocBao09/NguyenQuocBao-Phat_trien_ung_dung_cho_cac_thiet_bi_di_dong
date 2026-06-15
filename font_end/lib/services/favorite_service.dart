@@ -5,7 +5,7 @@ import 'package:font_end/models/product.dart';
 import 'package:font_end/auth_service.dart';
 
 class FavoriteService {
-  static const String baseUrl = "http://172.16.7.193:8080/api/favorites";
+  static const String baseUrl = "http://192.168.1.156:8080/api/favorites";
 
   // Global notifier to trigger UI updates across screens when favorites change
   static final ValueNotifier<int> favoritesChangedNotifier = ValueNotifier<int>(0);

@@ -1,5 +1,7 @@
 class Review {
   final String? id;
+  final String? productId;
+  final String? productName;
   final String userName;
   final String? userAvatar;
   final double rating;
@@ -10,6 +12,8 @@ class Review {
 
   Review({
     this.id,
+    this.productId,
+    this.productName,
     required this.userName,
     this.userAvatar,
     required this.rating,
@@ -22,6 +26,8 @@ class Review {
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
       id: json['id'],
+      productId: json['productId'],
+      productName: json['productName'],
       userName: json['userName'] ?? 'Unknown User',
       userAvatar: json['userAvatar'],
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,

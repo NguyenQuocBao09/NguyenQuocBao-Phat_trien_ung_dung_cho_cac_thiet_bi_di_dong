@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface ProductReviewRepository extends JpaRepository<ProductReview, UUID> {
     List<ProductReview> findByProductIdOrderByCreatedAtDesc(UUID productId);
+    List<ProductReview> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<ProductReview> findByProductIdAndUserId(UUID productId, UUID userId);
 }

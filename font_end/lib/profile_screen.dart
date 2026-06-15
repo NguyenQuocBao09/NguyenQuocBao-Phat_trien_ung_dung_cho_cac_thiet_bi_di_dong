@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
+import 'my_orders_screen.dart';
+import 'my_reviews_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -76,7 +79,12 @@ class ProfileScreen extends StatelessWidget {
               _buildListTile(
                 title: 'My orders',
                 subtitle: 'Already have 12 orders',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MyOrdersScreen()),
+                  );
+                },
               ),
               _buildListTile(
                 title: 'Shipping addresses',
@@ -96,12 +104,22 @@ class ProfileScreen extends StatelessWidget {
               _buildListTile(
                 title: 'My reviews',
                 subtitle: 'Reviews for 4 items',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MyReviewsScreen()),
+                  );
+                },
               ),
               _buildListTile(
                 title: 'Settings',
                 subtitle: 'Notifications, password',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 24),
             ],

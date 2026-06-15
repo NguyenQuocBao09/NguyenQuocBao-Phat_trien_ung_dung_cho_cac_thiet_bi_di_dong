@@ -53,6 +53,8 @@ public class ProductReviewController {
 
             return ReviewResponse.builder()
                     .id(review.getId())
+                    .productId(review.getProduct().getId())
+                    .productName(review.getProduct().getName())
                     .userName(review.getUser().getName())
                     .userAvatar(review.getUser().getImage())
                     .rating(review.getRating())
@@ -103,6 +105,8 @@ public class ProductReviewController {
 
         ReviewResponse response = ReviewResponse.builder()
                 .id(review.getId())
+                .productId(product.getId())
+                .productName(product.getName())
                 .userName(user.getName())
                 .userAvatar(user.getImage())
                 .rating(review.getRating())
@@ -130,5 +134,45 @@ public class ProductReviewController {
 
         Optional<ProductReview> existingReview = productReviewRepository.findByProductIdAndUserId(productId, user.getId());
         return ResponseEntity.ok(existingReview.isPresent());
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<ReviewResponse>> getUserReviews() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).build();
+        }
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<ProductReview> reviews = productReviewRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        
+        List<ReviewResponse> ReviewResponses = reviews.stream().map(review -> {
+            List<String> images = reviewGalleryRepository.findByReviewId(review.getId())
+                    .stream()
+                    .map(ReviewGallery::getImageUrl)
+                    .collect(Collectors.toList());
+                    
+            long helpfulCount = reviewHelpfulRepository.countByReviewId(review.getId());
+
+            return ReviewResponse.builder()
+                    .id(review.getId())
+                    .productId(review.getProduct().getId())
+                    .productName(review.getProduct().getName())
+                    .userName(user.getName())
+                    .userAvatar(user.getImage())
+                    .rating(review.getRating())
+                    .content(review.getContent())
+                    .createdAt(review.getCreatedAt())
+                    .images(images)
+                    .helpfulCount(helpfulCount)
+                    .build();
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(ReviewResponses);
     }
 }
