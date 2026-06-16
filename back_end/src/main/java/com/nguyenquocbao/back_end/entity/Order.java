@@ -24,8 +24,17 @@ public class Order {
     private Coupon coupon;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(columnDefinition = "TEXT")
+    private String shippingAddress;
+
+    private String paymentMethod;
+
+    private String deliveryMethod;
+
+    private Double totalAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_status_id")

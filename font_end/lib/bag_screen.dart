@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_end/services/cart_service.dart';
+import 'package:font_end/widgets/promo_code_bottom_sheet.dart';
+import 'package:font_end/checkout_screen.dart';
 
 class BagScreen extends StatefulWidget {
   const BagScreen({super.key});
@@ -15,6 +17,7 @@ class _BagScreenState extends State<BagScreen> {
     super.initState();
     cartService.addListener(_onCartChanged);
     cartService.fetchCart();
+    cartService.fetchAppliedCoupon();
   }
 
   @override
@@ -93,18 +96,31 @@ class _BagScreenState extends State<BagScreen> {
                                   bottomLeft: Radius.circular(8),
                                 ),
                                 child: item.productImageUrl.isNotEmpty
-                                    ? Image.network(
-                                        item.productImageUrl,
-                                        width: 104,
-                                        height: 104,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Container(
-                                          width: 104,
-                                          height: 104,
-                                          color: Colors.grey[300],
-                                          child: const Icon(Icons.image, color: Colors.grey),
-                                        ),
-                                      )
+                                    ? (item.productImageUrl.startsWith('assets/')
+                                        ? Image.asset(
+                                            item.productImageUrl,
+                                            width: 104,
+                                            height: 104,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              width: 104,
+                                              height: 104,
+                                              color: Colors.grey[300],
+                                              child: const Icon(Icons.image, color: Colors.grey),
+                                            ),
+                                          )
+                                        : Image.network(
+                                            item.productImageUrl,
+                                            width: 104,
+                                            height: 104,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              width: 104,
+                                              height: 104,
+                                              color: Colors.grey[300],
+                                              child: const Icon(Icons.image, color: Colors.grey),
+                                            ),
+                                          ))
                                     : Container(
                                         width: 104,
                                         height: 104,
@@ -217,6 +233,23 @@ class _BagScreenState extends State<BagScreen> {
                       ],
                     ),
                     child: TextField(
+                      controller: TextEditingController(text: cartService.appliedCoupon?.code ?? ''),
+                      readOnly: true,
+                      onTap: () {
+                        if (cartService.appliedCoupon == null) {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).viewInsets.bottom,
+                              ),
+                              child: const PromoCodeBottomSheet(),
+                            ),
+                          );
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'Enter your promo code',
                         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -225,15 +258,35 @@ class _BagScreenState extends State<BagScreen> {
                         suffixIcon: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              if (cartService.appliedCoupon != null) {
+                                cartService.removeCoupon();
+                              } else {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                                    ),
+                                    child: const PromoCodeBottomSheet(),
+                                  ),
+                                );
+                              }
+                            },
                             child: Container(
                               width: 40,
                               height: 40,
-                              decoration: const BoxDecoration(
-                                color: Colors.black,
+                              decoration: BoxDecoration(
+                                color: cartService.appliedCoupon != null ? Colors.red : Colors.black,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                              child: Icon(
+                                cartService.appliedCoupon != null ? Icons.close : Icons.arrow_forward,
+                                color: Colors.white, 
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -259,9 +312,14 @@ class _BagScreenState extends State<BagScreen> {
                   // Checkout Button
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 50,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFDB3022),
                         shape: RoundedRectangleBorder(

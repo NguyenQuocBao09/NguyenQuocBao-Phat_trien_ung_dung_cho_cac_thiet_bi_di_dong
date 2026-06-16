@@ -1,27 +1,30 @@
 package com.nguyenquocbao.back_end.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-
 import java.util.UUID;
 
 @Entity
-@Table(name = "carts")
+@Table(name = "payment_cards")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Cart {
+public class PaymentCard {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coupon_id")
-    private Coupon coupon;
+    private String cardHolderName;
+    private String cardNumber;
+    private String expiryDate;
+    private String brand;
+    private Boolean isDefault;
 }

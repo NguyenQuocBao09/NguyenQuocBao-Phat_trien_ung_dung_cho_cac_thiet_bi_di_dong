@@ -23,6 +23,12 @@ public class Coupon {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
+    @Column(name = "title", length = 100)
+    private String title;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "discount_value")
     private Double discountValue;
 
