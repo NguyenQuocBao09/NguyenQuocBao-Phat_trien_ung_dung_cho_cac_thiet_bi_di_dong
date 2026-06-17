@@ -3,6 +3,7 @@ import 'services/product_service.dart';
 import 'models/product.dart';
 import 'product_detail_screen.dart';
 import 'services/favorite_service.dart';
+import 'filters_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String categoryName;
@@ -136,9 +137,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
             color: const Color(0xFFF9F9F9),
             child: Row(
               children: [
-                const Icon(Icons.filter_list, size: 24),
-                const SizedBox(width: 8),
-                const Text('Filters', style: TextStyle(fontSize: 14)),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FiltersScreen()),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.filter_list, size: 24),
+                      const SizedBox(width: 8),
+                      const Text('Filters', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
                 const Spacer(),
                 const Icon(Icons.swap_vert, size: 24),
                 const SizedBox(width: 8),
