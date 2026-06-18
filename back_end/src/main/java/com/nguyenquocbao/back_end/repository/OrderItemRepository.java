@@ -6,6 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
+import java.util.List;
+import com.nguyenquocbao.back_end.entity.Order;
+
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, UUID> {
+    List<OrderItem> findByOrder(Order order);
 }

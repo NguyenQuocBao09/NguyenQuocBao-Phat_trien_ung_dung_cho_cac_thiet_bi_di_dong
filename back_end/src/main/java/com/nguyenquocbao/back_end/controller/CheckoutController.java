@@ -100,4 +100,9 @@ public class CheckoutController {
         checkoutService.submitOrder(getAuthenticatedUser(), request);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/orders")
+    public ResponseEntity<List<com.nguyenquocbao.back_end.dto.OrderDto>> getUserOrders() {
+        return ResponseEntity.ok(checkoutService.getUserOrders(getAuthenticatedUser()));
+    }
 }

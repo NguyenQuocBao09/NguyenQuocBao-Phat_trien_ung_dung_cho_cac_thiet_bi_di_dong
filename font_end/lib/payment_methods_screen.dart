@@ -36,6 +36,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _refreshPayments() async {
+    await checkoutService.fetchCheckoutData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cards = checkoutService.paymentCards;
@@ -57,49 +61,64 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0).copyWith(bottom: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Your payment cards', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                ...cards.map((card) {
-                  return Column(
-                    children: [
-                      _buildCreditCard(card),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          RefreshIndicator(
+            onRefresh: _refreshPayments,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0).copyWith(bottom: 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Your payment cards', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  if (cards.isEmpty)
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.4,
+                      child: const Center(
+                        child: Text(
+                          "You don't have any payment cards yet",
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    )
+                  else
+                    ...cards.map((card) {
+                      return Column(
                         children: [
+                          _buildCreditCard(card),
+                          const SizedBox(height: 8),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Checkbox(
-                                value: _selectedCardId == card.id,
-                                onChanged: (val) {
-                                  if (val == true) {
-                                    setState(() => _selectedCardId = card.id);
-                                  }
-                                },
-                                activeColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _selectedCardId == card.id,
+                                    onChanged: (val) {
+                                      if (val == true) {
+                                        setState(() => _selectedCardId = card.id);
+                                      }
+                                    },
+                                    activeColor: Colors.black,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                  ),
+                                  const Text('Use as default payment method'),
+                                ],
                               ),
-                              const Text('Use as default payment method'),
+                              IconButton(
+                                onPressed: () {
+                                  checkoutService.deletePaymentCard(card.id);
+                                },
+                                icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                              ),
                             ],
                           ),
-                          IconButton(
-                            onPressed: () {
-                              checkoutService.deletePaymentCard(card.id);
-                            },
-                            icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                          ),
+                          const SizedBox(height: 24),
                         ],
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  );
-                }).toList(),
-              ],
+                      );
+                    }).toList(),
+                ],
+              ),
             ),
           ),
           Positioned(

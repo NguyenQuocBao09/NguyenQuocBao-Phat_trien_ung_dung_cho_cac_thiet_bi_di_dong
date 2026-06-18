@@ -19,6 +19,13 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     _reviewsFuture = _productService.fetchUserReviews();
   }
 
+  Future<void> _refreshReviews() async {
+    setState(() {
+      _reviewsFuture = _productService.fetchUserReviews();
+    });
+    await _reviewsFuture;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,25 +62,42 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
               child: FutureBuilder<List<Review>>(
                 future: _reviewsFuture,
                 builder: (context, snapshot) {
+                  Widget content;
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    content = const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    content = Center(child: Text('Error: ${snapshot.error}'));
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
+                    content = const Center(
                       child: Text(
                         'Bạn chưa viết đánh giá nào.',
                         style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     );
+                  } else {
+                    final reviews = snapshot.data!;
+                    content = ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: reviews.length,
+                      itemBuilder: (context, index) {
+                        return _buildReviewCard(reviews[index]);
+                      },
+                    );
                   }
 
-                  final reviews = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: reviews.length,
-                    itemBuilder: (context, index) {
-                      return _buildReviewCard(reviews[index]);
-                    },
+                  if (content is Center) {
+                    content = ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                        content,
+                      ],
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: _refreshReviews,
+                    child: content,
                   );
                 },
               ),

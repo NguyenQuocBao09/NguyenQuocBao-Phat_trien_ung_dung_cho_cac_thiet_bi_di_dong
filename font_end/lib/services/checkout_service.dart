@@ -225,6 +225,24 @@ class CheckoutService extends ChangeNotifier {
     }
     return false;
   }
+
+  Future<List<dynamic>> fetchOrders() async {
+    if (AuthService.jwtToken == null) return [];
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders'),
+        headers: {
+          "Authorization": "Bearer ${AuthService.jwtToken!}",
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("Lỗi lấy danh sách đơn hàng: $e");
+    }
+    return [];
+  }
 }
 
 final CheckoutService checkoutService = CheckoutService();

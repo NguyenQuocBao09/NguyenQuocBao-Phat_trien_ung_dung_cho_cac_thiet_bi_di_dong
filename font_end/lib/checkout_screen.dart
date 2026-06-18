@@ -237,17 +237,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   showDialog(
                     context: context,
-                    builder: (context) => AlertDialog(
+                    builder: (dialogContext) => AlertDialog(
                       title: const Text('Xác nhận mua hàng'),
                       content: const Text('Bạn có chắc chắn muốn đặt đơn hàng này không?'),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.pop(dialogContext),
                           child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
                         ),
                         TextButton(
                           onPressed: () async {
-                            Navigator.pop(context); // Close dialog
+                            Navigator.pop(dialogContext); // Close dialog
                             bool success = await checkoutService.submitOrder(
                               selectedDelivery!.id,
                               cartService.totalAmount + selectedDelivery!.price,

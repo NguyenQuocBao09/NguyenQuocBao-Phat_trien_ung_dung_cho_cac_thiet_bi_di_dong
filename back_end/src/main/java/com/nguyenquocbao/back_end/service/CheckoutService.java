@@ -247,4 +247,30 @@ public class CheckoutService {
 
         cartItemRepository.deleteByCart(cart);
     }
+
+    @Transactional
+    public List<com.nguyenquocbao.back_end.dto.OrderDto> getUserOrders(User user) {
+        List<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(user);
+        return orders.stream().map(order -> {
+            List<OrderItem> items = orderItemRepository.findByOrder(order);
+            int quantity = items.stream().mapToInt(OrderItem::getQuantity).sum();
+            
+            String statusName = "Processing";
+            if (order.getOrderStatus() != null) {
+                statusName = order.getOrderStatus().getStatusName();
+            }
+            
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String dateStr = order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : "";
+            
+            return com.nguyenquocbao.back_end.dto.OrderDto.builder()
+                    .id(order.getId().length() > 8 ? order.getId().substring(0, 8) : order.getId())
+                    .trackingNumber("IW" + order.getId().substring(0, Math.min(order.getId().length(), 10)).toUpperCase())
+                    .quantity(quantity)
+                    .totalAmount(order.getTotalAmount())
+                    .date(dateStr)
+                    .status(statusName)
+                    .build();
+        }).toList();
+    }
 }

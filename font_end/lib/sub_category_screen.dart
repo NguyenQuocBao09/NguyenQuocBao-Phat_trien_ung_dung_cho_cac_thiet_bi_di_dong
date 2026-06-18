@@ -18,7 +18,7 @@ class SubCategoryScreen extends StatelessWidget {
         'Sandals',
         'Slippers',
         'Loafers',
-        'Oxfords',
+        'Oxford s',
       ];
     } else if (categoryName.toLowerCase() == 'accesories') {
       subCategories = [

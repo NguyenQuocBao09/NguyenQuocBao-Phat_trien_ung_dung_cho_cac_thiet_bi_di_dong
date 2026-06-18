@@ -36,6 +36,10 @@ class _ShippingAddressesScreenState extends State<ShippingAddressesScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _refreshAddresses() async {
+    await checkoutService.fetchCheckoutData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final addresses = checkoutService.addresses;
@@ -57,75 +61,92 @@ class _ShippingAddressesScreenState extends State<ShippingAddressesScreen> {
       ),
       body: Stack(
         children: [
-          ListView.separated(
-            padding: const EdgeInsets.all(16.0).copyWith(bottom: 100),
-            itemCount: addresses.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final address = addresses[index];
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(address.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Row(
+          RefreshIndicator(
+            onRefresh: _refreshAddresses,
+            child: addresses.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                      const Center(
+                        child: Text(
+                          "You don't have any shipping addresses yet",
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16.0).copyWith(bottom: 100),
+                    itemCount: addresses.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final address = addresses[index];
+                      return Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => ShippingAddressFormScreen(addressToEdit: address)),
-                                );
-                              },
-                              child: const Text('Edit', style: TextStyle(color: Colors.red)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(address.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Row(
+                                  children: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => ShippingAddressFormScreen(addressToEdit: address)),
+                                        );
+                                      },
+                                      child: const Text('Edit', style: TextStyle(color: Colors.red)),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        checkoutService.deleteAddress(address.id);
+                                      },
+                                      icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              onPressed: () {
-                                checkoutService.deleteAddress(address.id);
-                              },
-                              icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                            Text(
+                              '${address.address}\n${address.city}, ${address.state} ${address.zipCode}, ${address.country}',
+                              style: const TextStyle(color: Colors.grey, height: 1.5),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _selectedAddressId == address.id,
+                                  onChanged: (val) {
+                                    if (val == true) {
+                                      setState(() => _selectedAddressId = address.id);
+                                    }
+                                  },
+                                  activeColor: Colors.black,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                ),
+                                const Text('Use as the shipping address'),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    Text(
-                      '${address.address}\n${address.city}, ${address.state} ${address.zipCode}, ${address.country}',
-                      style: const TextStyle(color: Colors.grey, height: 1.5),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _selectedAddressId == address.id,
-                          onChanged: (val) {
-                            if (val == true) {
-                              setState(() => _selectedAddressId = address.id);
-                            }
-                          },
-                          activeColor: Colors.black,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        const Text('Use as the shipping address'),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
+                      );
+                    },
+                  ),
           ),
           Positioned(
             bottom: 0,

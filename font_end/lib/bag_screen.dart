@@ -30,6 +30,13 @@ class _BagScreenState extends State<BagScreen> {
     setState(() {});
   }
 
+  Future<void> _refreshBag() async {
+    await Future.wait([
+      cartService.fetchCart(),
+      cartService.fetchAppliedCoupon(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,17 +68,26 @@ class _BagScreenState extends State<BagScreen> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: cartService.items.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Your bag is empty",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: cartService.items.length,
-                      itemBuilder: (context, index) {
+              child: RefreshIndicator(
+                onRefresh: _refreshBag,
+                child: cartService.items.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                          const Center(
+                            child: Text(
+                              "Your bag is empty",
+                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: cartService.items.length,
+                        itemBuilder: (context, index) {
                         final item = cartService.items[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
@@ -209,6 +225,7 @@ class _BagScreenState extends State<BagScreen> {
                         );
                       },
                     ),
+              ),
             ),
             // Bottom Section (Promo code, Total, Checkout button)
             Container(

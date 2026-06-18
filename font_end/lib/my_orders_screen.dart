@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_end/models/order.dart';
+import 'package:font_end/services/checkout_service.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
@@ -9,42 +10,30 @@ class MyOrdersScreen extends StatefulWidget {
 }
 
 class _MyOrdersScreenState extends State<MyOrdersScreen> {
-  String selectedTab = 'Delivered';
+  String selectedTab = 'Processing'; // Defaulting to Processing since we set it to Processing in backend
   final List<String> tabs = ['Delivered', 'Processing', 'Cancelled'];
+  late Future<List<OrderModel>> _ordersFuture;
 
-  // Dữ liệu mẫu (dummy data) để hiển thị giao diện trước, do chưa có dữ liệu thật từ backend.
-  final List<OrderModel> dummyOrders = [
-    OrderModel(
-      id: '1947034',
-      trackingNumber: 'IW3475453455',
-      quantity: 3,
-      totalAmount: 112,
-      date: '05-12-2019',
-      status: 'Delivered',
-    ),
-    OrderModel(
-      id: '1947034',
-      trackingNumber: 'IW3475453455',
-      quantity: 3,
-      totalAmount: 112,
-      date: '05-12-2019',
-      status: 'Delivered',
-    ),
-    OrderModel(
-      id: '1947034',
-      trackingNumber: 'IW3475453455',
-      quantity: 3,
-      totalAmount: 112,
-      date: '05-12-2019',
-      status: 'Delivered',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _ordersFuture = _fetchOrders();
+  }
+
+  Future<List<OrderModel>> _fetchOrders() async {
+    final data = await checkoutService.fetchOrders();
+    return data.map((json) => OrderModel.fromJson(json)).toList();
+  }
+
+  Future<void> _refreshOrders() async {
+    setState(() {
+      _ordersFuture = _fetchOrders();
+    });
+    await _ordersFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Lọc danh sách theo tab đang chọn
-    final filteredOrders = dummyOrders.where((order) => order.status == selectedTab).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
@@ -107,16 +96,53 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
             const SizedBox(height: 24),
             // Orders List
             Expanded(
-              child: filteredOrders.isEmpty
-                  ? const Center(
-                      child: Text('Chưa có đơn hàng nào.', style: TextStyle(color: Colors.grey)),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredOrders.length,
-                      itemBuilder: (context, index) {
-                        return _buildOrderCard(filteredOrders[index]);
-                      },
-                    ),
+              child: FutureBuilder<List<OrderModel>>(
+                future: _ordersFuture,
+                builder: (context, snapshot) {
+                  Widget content;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    content = const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    content = Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    content = const Center(
+                      child: Text('Bạn chưa có đơn hàng nào.', style: TextStyle(color: Colors.grey)),
+                    );
+                  } else {
+                    final allOrders = snapshot.data!;
+                    final filteredOrders = allOrders.where((order) => order.status == selectedTab).toList();
+
+                    if (filteredOrders.isEmpty) {
+                      content = const Center(
+                        child: Text('Không có đơn hàng nào trong mục này.', style: TextStyle(color: Colors.grey)),
+                      );
+                    } else {
+                      content = ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: filteredOrders.length,
+                        itemBuilder: (context, index) {
+                          return _buildOrderCard(filteredOrders[index]);
+                        },
+                      );
+                    }
+                  }
+
+                  if (content is Center) {
+                    content = ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                        content,
+                      ],
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: _refreshOrders,
+                    child: content,
+                  );
+                },
+              ),
             ),
           ],
         ),
