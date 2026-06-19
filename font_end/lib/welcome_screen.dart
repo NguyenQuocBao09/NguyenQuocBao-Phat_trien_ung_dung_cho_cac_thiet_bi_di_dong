@@ -12,16 +12,7 @@ class WelcomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black,
-            size: 20,
-          ),
-          onPressed: () {
-            // Xử lý khi bấm nút quay lại
-          },
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: Padding(
@@ -81,49 +72,7 @@ class WelcomeScreen extends StatelessWidget {
                 },
               ),
 
-              const Spacer(), // Đẩy cụm Social Sign-In xuống sát đáy màn hình
-              // --- ĐĂNG NHẬP BẰNG MXH ---
-              Center(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Or sign up with social account',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Nút Google
-                        _buildSocialButton(
-                          logoPath:
-                              'assets/gg.jpg', // Thay bằng ảnh logo của bạn hoặc dùng Icon tạm thời
-                          isGoogle: true,
-                          onPressed: () {
-                            // Xử lý đăng nhập Google
-                          },
-                        ),
-                        const SizedBox(width: 20),
-                        // Nút Facebook
-                        _buildSocialButton(
-                          logoPath: 'assets/fb.png',
-                          isGoogle: false,
-                          onPressed: () {
-                            // Xử lý đăng nhập Facebook
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ), // Khoảng cách an toàn với thanh điều hướng đáy màn hình
-                  ],
-                ),
-              ),
+              const Spacer(),
             ],
           ),
         ),
@@ -176,44 +125,5 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  // Widget tạo Nút chọn Mạng xã hội hình chữ nhật bo góc trắng (Google / Facebook)
-  Widget _buildSocialButton({
-    required String logoPath,
-    required bool isGoogle,
-    required VoidCallback onPressed,
-  }) {
-return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        width: 92,
-        height: 64,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child: isGoogle
-              ? Image.asset(
-                  'assets/gg.jpg', 
-                  width: 24,      
-                  height: 24,
-                  fit: BoxFit.contain,
-                )
-              : const Icon(
-                  Icons.facebook, 
-                  color: Color(0xFF3B5998), 
-                  size: 32,
-                ),
-        ),
-      ),
-    );
-  }
+
 }

@@ -353,6 +353,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Sign up",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFDB3022),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const Spacer(), // Đẩy phần Mạng Xã Hội xuống cuối cùng
                 const SizedBox(height: 20),
 

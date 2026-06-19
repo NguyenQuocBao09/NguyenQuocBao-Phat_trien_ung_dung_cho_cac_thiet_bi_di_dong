@@ -18,7 +18,20 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
   late TextEditingController _cityController;
   late TextEditingController _stateController;
   late TextEditingController _zipCodeController;
-  late TextEditingController _countryController;
+
+  List<String> _countries = [
+    'Vietnam',
+    'United States',
+    'United Kingdom',
+    'Canada',
+    'Australia',
+    'Japan',
+    'South Korea',
+    'France',
+    'Germany',
+    'Singapore'
+  ];
+  String? _selectedCountry;
 
   @override
   void initState() {
@@ -28,7 +41,14 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
     _cityController = TextEditingController(text: widget.addressToEdit?.city ?? '');
     _stateController = TextEditingController(text: widget.addressToEdit?.state ?? '');
     _zipCodeController = TextEditingController(text: widget.addressToEdit?.zipCode ?? '');
-    _countryController = TextEditingController(text: widget.addressToEdit?.country ?? 'United States');
+    
+    String? initialCountry = widget.addressToEdit?.country;
+    if (initialCountry != null && initialCountry.isNotEmpty) {
+      if (!_countries.contains(initialCountry)) {
+        _countries.add(initialCountry);
+      }
+      _selectedCountry = initialCountry;
+    }
   }
 
   @override
@@ -38,7 +58,6 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
     _cityController.dispose();
     _stateController.dispose();
     _zipCodeController.dispose();
-    _countryController.dispose();
     super.dispose();
   }
 
@@ -54,7 +73,7 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
       city: _cityController.text,
       state: _stateController.text,
       zipCode: _zipCodeController.text,
-      country: _countryController.text,
+      country: _selectedCountry ?? '',
       isDefault: widget.addressToEdit?.isDefault ?? false,
     );
 
@@ -123,12 +142,7 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
                 validator: (val) => val == null || val.trim().length < 4 ? 'Invalid zip code' : null,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                _countryController, 
-                'Country', 
-                suffixIcon: const Icon(Icons.keyboard_arrow_right, color: Colors.grey),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter country' : null,
-              ),
+              _buildDropdownField(),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -168,6 +182,40 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           suffixIcon: suffixIcon,
         ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedCountry,
+        validator: (val) => val == null || val.trim().isEmpty ? 'Please select country' : null,
+        decoration: const InputDecoration(
+          labelText: 'Country',
+          labelStyle: TextStyle(color: Colors.grey, fontSize: 12),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+        items: _countries.map((String country) {
+          return DropdownMenuItem<String>(
+            value: country,
+            child: Text(country),
+          );
+        }).toList(),
+        onChanged: (String? newValue) {
+          setState(() {
+            _selectedCountry = newValue;
+          });
+        },
       ),
     );
   }
