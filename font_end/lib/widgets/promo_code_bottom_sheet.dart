@@ -96,7 +96,7 @@ class _PromoCodeBottomSheetState extends State<PromoCodeBottomSheet> {
                             Navigator.pop(context);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Mã giảm giá không hợp lệ')),
+                              const SnackBar(content: Text('Invalid promo code')),
                             );
                           }
                         });
@@ -238,7 +238,7 @@ class _PromoCodeBottomSheetState extends State<PromoCodeBottomSheet> {
                                   Navigator.pop(context);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Lỗi áp dụng mã')),
+                                    const SnackBar(content: Text('Error applying promo code')),
                                   );
                                 }
                               });

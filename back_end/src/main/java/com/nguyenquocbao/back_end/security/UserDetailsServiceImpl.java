@@ -16,7 +16,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Tìm kiếm user trong database PostgreSQL bằng email thay vì username truyền thống
-        return userRepository.findByEmail(email)
+        return userRepository.findFirstByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản với email: " + email));
     }
 }

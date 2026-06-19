@@ -9,6 +9,13 @@ class AuthService {
   // THAY ĐỔI IP NÀY THÀNH IP MẠNG WI-FI THẬT CỦA MÁY TÍNH BẠN (Xem lại ipconfig)
   static const String baseUrl = "http://192.168.1.156:8080/api/auth";
 
+  static Future<void> signOut() async {
+    jwtToken = null;
+    userName = null;
+    userEmail = null;
+    userPhotoUrl = null;
+  }
+
   // 1. Logic gọi API Đăng ký tài khoản
   Future<String?> register(String name, String email, String password) async {
     final url = Uri.parse('$baseUrl/register');
@@ -58,49 +65,80 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>?> loginWithGoogle(String idToken) async {
-    final url = Uri.parse('$baseUrl/google'); // Sẽ gọi đến endpoint /api/auth/google ở Spring Boot
+  Future<dynamic> loginWithGoogle(String idToken) async {
+    final url = Uri.parse('$baseUrl/google/login'); // Endpoint mới
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "token": idToken // Gửi mã ID Token mà điện thoại vừa lấy được từ Google sang Spring Boot
-        }),
+        body: jsonEncode({"token": idToken}),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body); // Nhận về chuỗi JWT riêng của hệ thống bạn
+        return jsonDecode(response.body); // Map chứa JWT
       } else {
-        print("Spring Boot từ chối xác thực token: ${response.body}");
-        return null;
+        // Trả về chuỗi lỗi (Ví dụ: "Tài khoản chưa được đăng ký...")
+        return response.body;
       }
     } catch (e) {
-      print("Lỗi kết nối không dây khi đăng nhập Google: $e");
-      return null;
+      return "Lỗi kết nối không dây khi đăng nhập Google: $e";
     }
   }
 
-  Future<Map<String, dynamic>?> loginWithFacebook(String accessToken) async {
-    final url = Uri.parse('$baseUrl/facebook'); // Sẽ gọi đến endpoint /api/auth/facebook ở Spring Boot
+  Future<dynamic> registerWithGoogle(String idToken) async {
+    final url = Uri.parse('$baseUrl/google/register'); // Endpoint mới
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "token": accessToken // Gửi mã Access Token mà điện thoại lấy được từ Facebook
-        }),
+        body: jsonEncode({"token": idToken}),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body); // Nhận về chuỗi JWT riêng của hệ thống bạn
+        return jsonDecode(response.body); // Thành công
       } else {
-        print("Spring Boot từ chối xác thực token Facebook: ${response.body}");
-        return null;
+        return response.body; // Trả về lỗi
       }
     } catch (e) {
-      print("Lỗi kết nối không dây khi đăng nhập Facebook: $e");
-      return null;
+      return "Lỗi kết nối không dây khi đăng ký Google: $e";
+    }
+  }
+
+  Future<dynamic> loginWithFacebook(String accessToken) async {
+    final url = Uri.parse('$baseUrl/facebook/login'); 
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": accessToken}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return response.body;
+      }
+    } catch (e) {
+      return "Lỗi kết nối không dây khi đăng nhập Facebook: $e";
+    }
+  }
+
+  Future<dynamic> registerWithFacebook(String accessToken) async {
+    final url = Uri.parse('$baseUrl/facebook/register'); 
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": accessToken}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return response.body;
+      }
+    } catch (e) {
+      return "Lỗi kết nối không dây khi đăng ký Facebook: $e";
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:font_end/services/favorite_service.dart';
 import 'package:font_end/services/cart_service.dart';
 import 'package:font_end/product_detail_screen.dart';
 import 'package:font_end/main_screen.dart';
+import 'package:font_end/filters_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -65,16 +66,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-              (route) => false,
-            );
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: const Text('Favorites', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 34)),
         centerTitle: false,
         actions: [
@@ -107,12 +99,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
-                    Icon(Icons.filter_list, size: 20),
-                    SizedBox(width: 4),
-                    Text('Filters', style: TextStyle(fontSize: 14)),
-                  ],
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FiltersScreen()),
+                    );
+                  },
+                  child: Row(
+                    children: const [
+                      Icon(Icons.filter_list, size: 20),
+                      SizedBox(width: 4),
+                      Text('Filters', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
                 ),
                 GestureDetector(
                   onTap: () {

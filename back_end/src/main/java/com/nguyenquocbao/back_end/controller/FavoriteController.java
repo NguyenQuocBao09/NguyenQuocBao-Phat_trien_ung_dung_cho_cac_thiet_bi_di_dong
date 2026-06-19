@@ -27,7 +27,7 @@ public class FavoriteController {
             throw new RuntimeException("User not authenticated");
         }
         String email = authentication.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findFirstByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @GetMapping
@@ -59,7 +59,7 @@ public class FavoriteController {
         }
         
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findFirstByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.ok(false);
         }

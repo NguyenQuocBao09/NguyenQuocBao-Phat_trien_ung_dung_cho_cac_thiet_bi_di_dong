@@ -29,7 +29,7 @@ public class CouponController {
             throw new RuntimeException("User not authenticated");
         }
         String email = authentication.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findFirstByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @GetMapping

@@ -12,6 +12,7 @@ class CheckoutService extends ChangeNotifier {
   List<UserAddress> _addresses = [];
   List<PaymentCard> _paymentCards = [];
   List<DeliveryMethod> _deliveryMethods = [];
+  bool useCashOnDelivery = false;
 
   List<UserAddress> get addresses => _addresses;
   List<PaymentCard> get paymentCards => _paymentCards;
@@ -24,6 +25,11 @@ class CheckoutService extends ChangeNotifier {
   PaymentCard? get defaultPaymentCard => _paymentCards.isNotEmpty 
       ? _paymentCards.firstWhere((p) => p.isDefault, orElse: () => _paymentCards.first) 
       : null;
+
+  void setCashOnDelivery(bool value) {
+    useCashOnDelivery = value;
+    notifyListeners();
+  }
 
   Future<void> fetchCheckoutData() async {
     if (AuthService.jwtToken == null) return;
@@ -215,6 +221,7 @@ class CheckoutService extends ChangeNotifier {
         body: jsonEncode({
           "deliveryMethodId": deliveryMethodId,
           "orderTotal": totalAmount,
+          "paymentMethod": useCashOnDelivery ? "Cash on Delivery" : (defaultPaymentCard?.cardNumber ?? "Credit Card"),
         }),
       );
       if (response.statusCode == 200) {
@@ -242,6 +249,42 @@ class CheckoutService extends ChangeNotifier {
       print("Lỗi lấy danh sách đơn hàng: $e");
     }
     return [];
+  }
+
+  Future<dynamic> fetchOrderDetails(String orderId) async {
+    if (AuthService.jwtToken == null) return null;
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders/$orderId'),
+        headers: {
+          "Authorization": "Bearer ${AuthService.jwtToken!}",
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("Lỗi lấy chi tiết đơn hàng: $e");
+    }
+    return null;
+  }
+
+  Future<bool> cancelOrder(String orderId) async {
+    if (AuthService.jwtToken == null) return false;
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/orders/$orderId/cancel'),
+        headers: {
+          "Authorization": "Bearer ${AuthService.jwtToken!}",
+        },
+      );
+      if (response.statusCode == 200) {
+        return true;
+      }
+    } catch (e) {
+      print("Lỗi hủy đơn hàng: $e");
+    }
+    return false;
   }
 }
 

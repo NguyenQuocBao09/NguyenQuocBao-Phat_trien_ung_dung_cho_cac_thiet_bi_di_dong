@@ -12,7 +12,12 @@ import java.util.UUID;
 
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
-    List<CartItem> findByCart(Cart cart);
+    List<CartItem> findByCartOrderByIdAsc(Cart cart);
     Optional<CartItem> findByCartAndProductAndColorAndSize(Cart cart, Product product, String color, String size);
+    
+    // Default method for backward compatibility
+    default List<CartItem> findByCart(Cart cart) {
+        return findByCartOrderByIdAsc(cart);
+    }
     void deleteByCart(Cart cart);
 }

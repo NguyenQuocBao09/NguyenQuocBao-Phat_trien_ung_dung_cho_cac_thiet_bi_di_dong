@@ -32,17 +32,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Kiểm tra nhanh dữ liệu đầu vào (Validation)
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      _showSnackBar('Vui lòng điền đầy đủ các trường thông tin!', Colors.orange);
+      _showSnackBar('Please fill in all fields!', Colors.orange);
       return;
     }
 
     if (!email.contains('@')) {
-      _showSnackBar('Định dạng email không hợp lệ!', Colors.orange);
+      _showSnackBar('Invalid email format!', Colors.orange);
       return;
     }
 
     if (password.length < 6) {
-      _showSnackBar('Mật khẩu phải có ít nhất 6 ký tự!', Colors.orange);
+      _showSnackBar('Password must be at least 6 characters!', Colors.orange);
       return;
     }
 
@@ -61,7 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (responseResult == "SUCCESS") {
       // ĐĂNG KÝ THÀNH CÔNG
-      _showSnackBar('Đăng ký tài khoản thành công!', Colors.green);
+      _showSnackBar('Account registered successfully!', Colors.green);
       
       // Chờ hiển thị SnackBar xong rồi tự động chuyển hướng người dùng về màn hình Login
       Future.delayed(const Duration(seconds: 1), () {
@@ -74,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
     } else {
       // ĐĂNG KÝ THẤT BẠI (Email đã tồn tại hoặc lỗi mất kết nối Wi-Fi)
-      _showSnackBar(responseResult ?? 'Đăng ký thất bại! Lỗi kết nối mạng.', Colors.red);
+      _showSnackBar(responseResult ?? 'Registration failed! Network error.', Colors.red);
     }
   }
 
@@ -109,22 +109,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Hiển thị hộp thoại xác nhận trước khi tiếp tục
       bool? confirm = await showDialog<bool>(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Xác nhận tạo tài khoản'),
-            content: Text('Bạn có chắc chắn muốn tạo tài khoản bằng email ${googleUser.email} không?'),
+        builder: (dialogContext) => AlertDialog(
+            title: const Text('Confirm Account Creation'),
+            content: Text('Are you sure you want to create an account with ${googleUser.email}?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Không', style: TextStyle(color: Colors.red)),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('No', style: TextStyle(color: Colors.red)),
               ),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Có', style: TextStyle(color: Colors.green)),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Yes', style: TextStyle(color: Colors.green)),
               ),
             ],
-          );
-        },
+          ),
       );
 
       // Nếu người dùng chọn Không hoặc bấm ra ngoài hộp thoại
@@ -144,12 +142,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final String? idToken = googleAuth.idToken;
 
       if (idToken != null) {
-        var result = await _authService.loginWithGoogle(idToken);
+        var result = await _authService.registerWithGoogle(idToken);
 
         setState(() { _isLoading = false; });
 
-        if (result != null) {
-          _showSnackBar('Đăng ký thành công, vui lòng đăng nhập lại!', Colors.green);
+        if (result is Map) {
+          _showSnackBar('Registration successful, please login!', Colors.green);
           
           // Chuyển sang màn hình Đăng nhập
           Future.delayed(const Duration(seconds: 1), () {
@@ -160,15 +158,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               );
             }
           });
+        } else if (result is String) {
+          _showSnackBar(result, Colors.red);
         } else {
-          _showSnackBar('Server từ chối xác thực Google!', Colors.red);
+          _showSnackBar('Server rejected Google authentication!', Colors.red);
         }
       } else {
         setState(() { _isLoading = false; });
       }
     } catch (error) {
       setState(() { _isLoading = false; });
-      _showSnackBar('Lỗi kích hoạt SDK Google: $error', Colors.red);
+      _showSnackBar('Google SDK error: $error', Colors.red);
     }
   }
 
@@ -176,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _handleFacebookSignUp() async {
     try {
       final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
+        permissions: ['public_profile'],
       );
 
       if (result.status == LoginStatus.success) {
@@ -184,33 +184,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
         setState(() { _isLoading = true; });
 
-        var apiResult = await _authService.loginWithFacebook(accessToken.tokenString);
+        var apiResult = await _authService.registerWithFacebook(accessToken.tokenString);
 
         setState(() { _isLoading = false; });
 
-        if (apiResult != null) {
+        if (apiResult is Map) {
           String name = apiResult['name'];
-          _showSnackBar('Đăng ký Facebook thành công! Chào mừng $name', Colors.green);
+          _showSnackBar('Facebook registration successful! Welcome $name. Please login.', Colors.green);
           
           Future.delayed(const Duration(seconds: 1), () {
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const MainScreen()),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
               );
             }
           });
+        } else if (apiResult is String) {
+          _showSnackBar(apiResult, Colors.red);
         } else {
-          _showSnackBar('Server từ chối xác thực Facebook!', Colors.red);
+          _showSnackBar('Server rejected Facebook authentication!', Colors.red);
         }
       } else if (result.status == LoginStatus.cancelled) {
         // Hủy
       } else {
-        _showSnackBar('Lỗi đăng nhập Facebook: ${result.message}', Colors.red);
+        _showSnackBar('Facebook login error: ${result.message}', Colors.red);
       }
     } catch (error) {
       setState(() { _isLoading = false; });
-      _showSnackBar('Lỗi kích hoạt SDK Facebook: $error', Colors.red);
+      _showSnackBar('Facebook SDK error: $error', Colors.red);
     }
   }
 

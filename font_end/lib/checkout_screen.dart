@@ -143,20 +143,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ],
                   ),
                   child: Center(
-                    child: payment?.brand == 'Mastercard'
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(width: 15, height: 15, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                              Transform.translate(offset: const Offset(-5, 0), child: Container(width: 15, height: 15, decoration: BoxDecoration(color: Colors.orange.withOpacity(0.8), shape: BoxShape.circle))),
-                            ],
-                          )
-                        : const Text('VISA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontStyle: FontStyle.italic)),
+                    child: checkoutService.useCashOnDelivery
+                        ? const Icon(Icons.money, color: Colors.green)
+                        : payment?.brand == 'Mastercard'
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(width: 15, height: 15, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                                  Transform.translate(offset: const Offset(-5, 0), child: Container(width: 15, height: 15, decoration: BoxDecoration(color: Colors.orange.withOpacity(0.8), shape: BoxShape.circle))),
+                                ],
+                              )
+                            : const Text('VISA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontStyle: FontStyle.italic)),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  payment != null ? payment.cardNumber : '**** **** **** ****',
+                  checkoutService.useCashOnDelivery 
+                      ? 'Cash on Delivery' 
+                      : (payment != null && payment.cardNumber.replaceAll(' ', '').length >= 4 
+                          ? '**** **** **** ${payment.cardNumber.replaceAll(' ', '').substring(payment.cardNumber.replaceAll(' ', '').length - 4)}' 
+                          : '**** **** **** ****'),
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -223,27 +229,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   if (checkoutService.defaultAddress == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn địa chỉ giao hàng')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a shipping address')));
                     return;
                   }
-                  if (checkoutService.defaultPaymentCard == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn phương thức thanh toán')));
+                  if (!checkoutService.useCashOnDelivery && checkoutService.defaultPaymentCard == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a payment method')));
                     return;
                   }
                   if (selectedDelivery == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn phương thức vận chuyển')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a delivery method')));
                     return;
                   }
 
                   showDialog(
                     context: context,
                     builder: (dialogContext) => AlertDialog(
-                      title: const Text('Xác nhận mua hàng'),
-                      content: const Text('Bạn có chắc chắn muốn đặt đơn hàng này không?'),
+                      title: const Text('Confirm Order'),
+                      content: const Text('Are you sure you want to place this order?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+                          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                         ),
                         TextButton(
                           onPressed: () async {
@@ -254,6 +260,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             );
                             if (success) {
                               await cartService.fetchCart(); // refresh cart (it should be empty now)
+                              await cartService.fetchAppliedCoupon(); // clear coupon UI
                               if (mounted) {
                                 Navigator.pushReplacement(
                                   context,
@@ -261,7 +268,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 );
                               }
                             } else {
-                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đặt hàng thất bại, vui lòng thử lại.')));
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order failed, please try again.')));
                             }
                           },
                           child: const Text('OK', style: TextStyle(color: Colors.red)),

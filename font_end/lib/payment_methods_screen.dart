@@ -17,11 +17,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     super.initState();
     checkoutService.addListener(_onUpdate);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final defaultCard = checkoutService.defaultPaymentCard;
-      if (defaultCard != null && mounted) {
-        setState(() {
-          _selectedCardId = defaultCard.id;
-        });
+      if (checkoutService.useCashOnDelivery) {
+        if (mounted) setState(() => _selectedCardId = 'COD');
+      } else {
+        final defaultCard = checkoutService.defaultPaymentCard;
+        if (defaultCard != null && mounted) {
+          setState(() {
+            _selectedCardId = defaultCard.id;
+          });
+        }
       }
     });
   }
@@ -71,9 +75,43 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 children: [
                   const Text('Your payment cards', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
+                  
+                  // Cash on Delivery Option
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _selectedCardId == 'COD' ? Colors.red : Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.money, color: Colors.green, size: 30),
+                            const SizedBox(width: 16),
+                            const Text('Cash on Delivery', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        Checkbox(
+                          value: _selectedCardId == 'COD',
+                          onChanged: (val) {
+                            if (val == true) {
+                              setState(() => _selectedCardId = 'COD');
+                            }
+                          },
+                          activeColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
                   if (cards.isEmpty)
                     SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.4,
+                      height: MediaQuery.of(context).size.height * 0.2,
                       child: const Center(
                         child: Text(
                           "You don't have any payment cards yet",
@@ -102,7 +140,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                     activeColor: Colors.black,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                   ),
-                                  const Text('Use as default payment method'),
+                                  const Text('Use as payment method'),
                                 ],
                               ),
                               IconButton(
@@ -133,7 +171,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (_selectedCardId != null) {
+                    if (_selectedCardId == 'COD') {
+                      checkoutService.setCashOnDelivery(true);
+                      if (mounted) Navigator.pop(context);
+                    } else if (_selectedCardId != null) {
+                      checkoutService.setCashOnDelivery(false);
                       await checkoutService.setDefaultPaymentCard(_selectedCardId!);
                       if (mounted) Navigator.pop(context);
                     }
@@ -211,7 +253,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             ],
           ),
           Text(
-            card.cardNumber,
+            card.cardNumber.replaceAll(' ', '').length >= 4 
+                ? '**** **** **** ${card.cardNumber.replaceAll(' ', '').substring(card.cardNumber.replaceAll(' ', '').length - 4)}'
+                : card.cardNumber,
             style: const TextStyle(color: Colors.white, fontSize: 22, letterSpacing: 2),
           ),
           Row(

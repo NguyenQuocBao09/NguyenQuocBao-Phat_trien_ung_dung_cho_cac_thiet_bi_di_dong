@@ -21,7 +21,7 @@ public class AppConfig {
     // 1. Định nghĩa cách Spring Security tìm kiếm User dựa vào Email từ Flutter gửi lên
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByEmail(username)
+        return username -> userRepository.findFirstByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + username));
     }
 

@@ -26,12 +26,27 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
 
+    @Transactional
     public Cart getOrCreateCart(User user) {
-        return cartRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Cart newCart = Cart.builder().user(user).build();
-                    return cartRepository.save(newCart);
-                });
+        java.util.List<Cart> carts = cartRepository.findByUser(user);
+        if (carts != null && !carts.isEmpty()) {
+            if (carts.size() > 1) {
+                Cart mainCart = carts.get(0);
+                for (int i = 1; i < carts.size(); i++) {
+                    Cart duplicate = carts.get(i);
+                    java.util.List<CartItem> duplicateItems = cartItemRepository.findByCart(duplicate);
+                    for (CartItem item : duplicateItems) {
+                        item.setCart(mainCart);
+                        cartItemRepository.save(item);
+                    }
+                    cartRepository.delete(duplicate);
+                }
+                return mainCart;
+            }
+            return carts.get(0);
+        }
+        Cart newCart = Cart.builder().user(user).build();
+        return cartRepository.save(newCart);
     }
 
     @Transactional

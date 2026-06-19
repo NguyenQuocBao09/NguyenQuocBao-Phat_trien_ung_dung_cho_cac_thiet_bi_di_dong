@@ -49,9 +49,9 @@ class ShopScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            CategoryTabContent(), // Women
-            Center(child: Text('Men Categories')), // Men
-            Center(child: Text('Kids Categories')), // Kids
+            CategoryTabContent(department: 'Women'), // Women
+            CategoryTabContent(department: 'Men'), // Men
+            CategoryTabContent(department: 'Kids'), // Kids
           ],
         ),
       ),
@@ -60,7 +60,8 @@ class ShopScreen extends StatelessWidget {
 }
 
 class CategoryTabContent extends StatelessWidget {
-  const CategoryTabContent({super.key});
+  final String department;
+  const CategoryTabContent({super.key, this.department = 'Women'});
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +108,7 @@ class CategoryTabContent extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SubCategoryScreen(categoryName: title),
+            builder: (context) => SubCategoryScreen(categoryName: title, department: department),
           ),
         );
       },

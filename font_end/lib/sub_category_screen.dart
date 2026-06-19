@@ -3,8 +3,9 @@ import 'product_list_screen.dart';
 
 class SubCategoryScreen extends StatelessWidget {
   final String categoryName;
+  final String department;
 
-  const SubCategoryScreen({super.key, required this.categoryName});
+  const SubCategoryScreen({super.key, required this.categoryName, this.department = 'Women'});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class SubCategoryScreen extends StatelessWidget {
         'Sandals',
         'Slippers',
         'Loafers',
-        'Oxford s',
+        'Oxfords',
       ];
     } else if (categoryName.toLowerCase() == 'accesories') {
       subCategories = [
@@ -114,7 +115,7 @@ class SubCategoryScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ProductListScreen(categoryName: subCategories[index]),
+                        builder: (context) => ProductListScreen(categoryName: subCategories[index], department: department),
                       ),
                     );
                   },

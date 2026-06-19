@@ -73,7 +73,7 @@ public class ProductReviewController {
     public ResponseEntity<ReviewResponse> addOrUpdateReview(@RequestBody CreateReviewRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findFirstByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         Product product = productRepository.findById(request.getProductId()).orElseThrow(() -> new RuntimeException("Product not found"));
 
         ProductReview review = productReviewRepository.findByProductIdAndUserId(product.getId(), user.getId())
@@ -127,7 +127,7 @@ public class ProductReviewController {
         }
 
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findFirstByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.ok(false);
         }
@@ -144,7 +144,7 @@ public class ProductReviewController {
         }
 
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findFirstByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.status(401).build();
         }

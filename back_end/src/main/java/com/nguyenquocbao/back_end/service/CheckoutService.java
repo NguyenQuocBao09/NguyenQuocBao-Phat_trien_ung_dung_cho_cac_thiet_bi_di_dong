@@ -8,6 +8,7 @@ import com.nguyenquocbao.back_end.entity.Cart;
 import com.nguyenquocbao.back_end.entity.CartItem;
 import com.nguyenquocbao.back_end.entity.Order;
 import com.nguyenquocbao.back_end.entity.OrderItem;
+import com.nguyenquocbao.back_end.entity.OrderStatus;
 import com.nguyenquocbao.back_end.repository.*;
 import com.nguyenquocbao.back_end.dto.SubmitOrderRequest;
 import jakarta.annotation.PostConstruct;
@@ -29,6 +30,7 @@ public class CheckoutService {
     private final OrderItemRepository orderItemRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final OrderStatusRepository orderStatusRepository;
 
     @PostConstruct
     @Transactional
@@ -38,6 +40,8 @@ public class CheckoutService {
             deliveryMethodRepository.save(DeliveryMethod.builder().name("USPS.COM").duration("2-3 days").price(10.0).logoUrl("usps.png").build());
             deliveryMethodRepository.save(DeliveryMethod.builder().name("DHL").duration("2-3 days").price(20.0).logoUrl("dhl.png").build());
         }
+        
+        clearProcessingOrders();
     }
 
     @Transactional
@@ -217,7 +221,7 @@ public class CheckoutService {
         DeliveryMethod deliveryMethod = deliveryMethodRepository.findById(request.getDeliveryMethodId())
                 .orElseThrow(() -> new RuntimeException("Delivery method not found"));
 
-        Cart cart = cartRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Cart not found"));
+        Cart cart = cartRepository.findFirstByUser(user).orElseThrow(() -> new RuntimeException("Cart not found"));
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
 
         if (cartItems.isEmpty()) {
@@ -231,6 +235,7 @@ public class CheckoutService {
                 .paymentMethod(card.getBrand() + " ending in " + card.getCardNumber().substring(card.getCardNumber().length() - 4))
                 .deliveryMethod(deliveryMethod.getName())
                 .totalAmount(request.getOrderTotal())
+                .coupon(cart.getCoupon())
                 .build();
 
         order = orderRepository.save(order);
@@ -241,11 +246,15 @@ public class CheckoutService {
                     .product(item.getProduct())
                     .price(item.getProduct().getSalePrice())
                     .quantity(item.getQuantity())
+                    .color(item.getColor())
+                    .size(item.getSize())
                     .build();
             orderItemRepository.save(orderItem);
         }
 
         cartItemRepository.deleteByCart(cart);
+        cart.setCoupon(null);
+        cartRepository.save(cart);
     }
 
     @Transactional
@@ -264,7 +273,7 @@ public class CheckoutService {
             String dateStr = order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : "";
             
             return com.nguyenquocbao.back_end.dto.OrderDto.builder()
-                    .id(order.getId().length() > 8 ? order.getId().substring(0, 8) : order.getId())
+                    .id(order.getId())
                     .trackingNumber("IW" + order.getId().substring(0, Math.min(order.getId().length(), 10)).toUpperCase())
                     .quantity(quantity)
                     .totalAmount(order.getTotalAmount())
@@ -272,5 +281,98 @@ public class CheckoutService {
                     .status(statusName)
                     .build();
         }).toList();
+    }
+
+    @Transactional
+    public com.nguyenquocbao.back_end.dto.OrderDetailsDto getOrderDetails(User user, String orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        List<OrderItem> items = orderItemRepository.findByOrder(order);
+        int quantity = items.stream().mapToInt(OrderItem::getQuantity).sum();
+        
+        String statusName = "Processing";
+        if (order.getOrderStatus() != null) {
+            statusName = order.getOrderStatus().getStatusName();
+        }
+        
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String dateStr = order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : "";
+        
+        List<com.nguyenquocbao.back_end.dto.OrderItemDto> itemDtos = items.stream().map(item -> {
+            String brandName = item.getProduct().getProductType() != null ? item.getProduct().getProductType() : "Mango";
+            return com.nguyenquocbao.back_end.dto.OrderItemDto.builder()
+                    .productId(item.getProduct().getId().toString())
+                    .image(item.getProduct().getImageUrl())
+                    .productName(item.getProduct().getName())
+                    .brand(brandName)
+                    .color(item.getColor() != null ? item.getColor() : "Gray")
+                    .size(item.getSize() != null ? item.getSize() : "L")
+                    .units(item.getQuantity())
+                    .price(item.getPrice())
+                    .build();
+        }).toList();
+
+        String discountText = "";
+        if (order.getCoupon() != null) {
+            int discountInt = order.getCoupon().getDiscountValue() != null ? order.getCoupon().getDiscountValue().intValue() : 0;
+            discountText = discountInt + "%, " + order.getCoupon().getCode();
+        } else {
+            discountText = "No discount applied";
+        }
+
+        return com.nguyenquocbao.back_end.dto.OrderDetailsDto.builder()
+                .id(order.getId())
+                // Assuming tracking number is somewhat derived
+                .trackingNumber("IW" + order.getId().substring(0, Math.min(order.getId().length(), 10)).toUpperCase())
+                .quantity(quantity)
+                .totalAmount(order.getTotalAmount())
+                .date(dateStr)
+                .status(statusName)
+                .shippingAddress(order.getShippingAddress() != null ? order.getShippingAddress() : "N/A")
+                .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod() : "N/A")
+                .deliveryMethod(order.getDeliveryMethod() != null ? order.getDeliveryMethod() : "N/A")
+                .discount(discountText)
+                .items(itemDtos)
+                .build();
+    }
+
+    @Transactional
+    public void cancelOrder(User user, String orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        if (order.getOrderStatus() != null && "Cancelled".equals(order.getOrderStatus().getStatusName())) {
+            throw new RuntimeException("Order is already cancelled");
+        }
+
+        OrderStatus cancelledStatus = orderStatusRepository.findByStatusName("Cancelled")
+                .orElseGet(() -> {
+                    OrderStatus newStatus = OrderStatus.builder()
+                            .statusName("Cancelled")
+                            .color("Red")
+                            .privacy("Public")
+                            .build();
+                    return orderStatusRepository.save(newStatus);
+                });
+
+        order.setOrderStatus(cancelledStatus);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void clearProcessingOrders() {
+        List<Order> orders = orderRepository.findAllWithStatus();
+        for (Order order : orders) {
+            String status = order.getOrderStatus() != null ? order.getOrderStatus().getStatusName() : "Processing";
+            if ("Processing".equalsIgnoreCase(status)) {
+                List<OrderItem> items = orderItemRepository.findByOrder(order);
+                orderItemRepository.deleteAll(items);
+                orderRepository.delete(order);
+            }
+        }
     }
 }

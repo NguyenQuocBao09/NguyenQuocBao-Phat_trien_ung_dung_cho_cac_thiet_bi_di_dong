@@ -10,6 +10,7 @@ class AddPaymentCardBottomSheet extends StatefulWidget {
 }
 
 class _AddPaymentCardBottomSheetState extends State<AddPaymentCardBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _numberController = TextEditingController();
   final _expiryController = TextEditingController();
@@ -17,6 +18,10 @@ class _AddPaymentCardBottomSheetState extends State<AddPaymentCardBottomSheet> {
   bool _isDefault = false;
 
   void _addCard() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
     final card = PaymentCard(
       id: '',
       cardHolderName: _nameController.text,
@@ -40,24 +45,57 @@ class _AddPaymentCardBottomSheetState extends State<AddPaymentCardBottomSheet> {
       ),
       padding: const EdgeInsets.all(24),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(width: 60, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 16),
-            const Text('Add new card', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            _buildTextField(_nameController, 'Name on card'),
-            const SizedBox(height: 16),
-            _buildTextField(_numberController, 'Card number', keyboardType: TextInputType.number),
-            const SizedBox(height: 16),
-            _buildTextField(_expiryController, 'Expire Date', keyboardType: TextInputType.datetime),
-            const SizedBox(height: 16),
-            _buildTextField(_cvvController, 'CVV', keyboardType: TextInputType.number),
-            const SizedBox(height: 16),
-            Row(
-              children: [
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(width: 60, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              const Text('Add new card', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              _buildTextField(
+                _nameController, 
+                'Name on card',
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter name on card' : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _numberController, 
+                'Card number', 
+                keyboardType: TextInputType.number,
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Please enter card number';
+                  if (val.replaceAll(' ', '').length != 16) return 'Card number must be 16 digits';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _expiryController, 
+                'Expire Date (MM/YY)', 
+                keyboardType: TextInputType.datetime,
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Please enter expiry date';
+                  if (!RegExp(r'^(0[1-9]|1[0-2])\/?([0-9]{2})$').hasMatch(val)) return 'Invalid MM/YY format';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _cvvController, 
+                'CVV', 
+                keyboardType: TextInputType.number,
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Please enter CVV';
+                  if (val.length != 3) return 'CVV must be 3 digits';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
                 Checkbox(
                   value: _isDefault,
                   onChanged: (val) => setState(() => _isDefault = val ?? false),
@@ -83,10 +121,11 @@ class _AddPaymentCardBottomSheetState extends State<AddPaymentCardBottomSheet> {
           ],
         ),
       ),
+      ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType keyboardType = TextInputType.text, String? Function(String?)? validator}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -95,9 +134,10 @@ class _AddPaymentCardBottomSheetState extends State<AddPaymentCardBottomSheet> {
           BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5),
         ],
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        validator: validator,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),

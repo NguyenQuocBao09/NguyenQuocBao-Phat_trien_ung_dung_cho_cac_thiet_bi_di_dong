@@ -38,7 +38,7 @@ public class CheckoutController {
             throw new RuntimeException("User not authenticated");
         }
         String email = authentication.getName();
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findFirstByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @GetMapping("/addresses")
@@ -104,5 +104,22 @@ public class CheckoutController {
     @GetMapping("/orders")
     public ResponseEntity<List<com.nguyenquocbao.back_end.dto.OrderDto>> getUserOrders() {
         return ResponseEntity.ok(checkoutService.getUserOrders(getAuthenticatedUser()));
+    }
+
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<com.nguyenquocbao.back_end.dto.OrderDetailsDto> getOrderDetails(@PathVariable String id) {
+        return ResponseEntity.ok(checkoutService.getOrderDetails(getAuthenticatedUser(), id));
+    }
+
+    @PutMapping("/orders/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable String id) {
+        checkoutService.cancelOrder(getAuthenticatedUser(), id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/clear-processing")
+    public ResponseEntity<?> clearProcessingOrders() {
+        checkoutService.clearProcessingOrders();
+        return ResponseEntity.ok().build();
     }
 }

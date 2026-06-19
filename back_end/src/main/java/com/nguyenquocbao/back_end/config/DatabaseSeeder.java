@@ -53,12 +53,22 @@ public class DatabaseSeeder implements CommandLineRunner {
         Tag newTag = tagRepository.save(Tag.builder().name("NEW").build());
         Tag saleTag = tagRepository.save(Tag.builder().name("SALE").build());
 
+        // Create Main Categories (for future hierarchical use, though currently flat)
         Category tops = categoryRepository.save(Category.builder().categoryName("Tops").build());
-        Category clothes = categoryRepository.save(Category.builder().categoryName("Clothes").build());
+        Category shirts = categoryRepository.save(Category.builder().categoryName("Shirts & Blouses").build());
+        Category cardigans = categoryRepository.save(Category.builder().categoryName("Cardigans & Sweaters").build());
+        Category knitwear = categoryRepository.save(Category.builder().categoryName("Knitwear").build());
+        Category outerwear = categoryRepository.save(Category.builder().categoryName("Outerwear").build());
+        Category blazers = categoryRepository.save(Category.builder().categoryName("Blazers").build());
+        Category pants = categoryRepository.save(Category.builder().categoryName("Pants").build());
+        Category jeans = categoryRepository.save(Category.builder().categoryName("Jeans").build());
+        Category shorts = categoryRepository.save(Category.builder().categoryName("Shorts").build());
+        Category skirts = categoryRepository.save(Category.builder().categoryName("Skirts").build());
+        Category dresses = categoryRepository.save(Category.builder().categoryName("Dresses").build());
+        
+        // These are kept empty per user request
         Category shoes = categoryRepository.save(Category.builder().categoryName("Shoes").build());
         Category accessories = categoryRepository.save(Category.builder().categoryName("Accessories").build());
-        Category shirts = categoryRepository.save(Category.builder().categoryName("Shirts & Blouses").build());
-        List<Category> categories = List.of(tops, clothes, shoes, accessories, shirts);
 
         String[] images = {
             "wc1.jpg", "wc2.jpg", "wc3.jpg", "wc4.jpg", "wc5.jpg", "wc6.jpg", 
@@ -73,13 +83,23 @@ public class DatabaseSeeder implements CommandLineRunner {
             "outerwear7.jpg", "outerwear8.jpg", "wc8.jpg", "wc9.jpg", "wc10.jpg", "wc11.jpg", 
             "skirt1.jpg", "skirt2.jpg", "skirt3.jpg", "skirt4.jpg", "skirt5.jpg", "sportdress.jpg", "blazer10.jpg", 
             "wc12.jpg", "wc13.jpg", "wc14.jpg", "womens_top_casual.png", "womens_top_floral.png", 
-            "womens_top_silk.png"
+            "womens_top_silk.png", "cardigans1.jpg", "cardigans2.jpg", "cardigans3.jpg", "cardigans4.jpg", 
+            "cardigans5.jpg", "cardigans6.jpg", "cardigans7.jpg", "cardigans8.jpg", "cardigans9.jpg", "cardigans10.jpg",
+            "wjeans.jpg", "wjeans2.jpg", "wjeans3.jpg", "wjeans4.jpg", "wjeans5.jpg",
+            "wjeans6.jpg", "wjeans7.jpg", "wjeans8.jpg", "wjeans9.jpg", "wjeans10.jpg",
+            "knitwear10.jpg", "knitwear11.jpg", "knitwear12.jpg", "knitwear13.jpg", "knitwear14.jpg", "knitwear15.jpg",
+            "pants4.jpg", "pants5.jpg", "pants6.jpg", "pants7.jpg", "pants8.jpg", "pants9.jpg", "pants10.jpg",
+            "short1.jpg", "short2.jpg", "short3.jpg", "shorts4.jpg", "short5.jpg", "short6.jpg", "short7.jpg", "short8.jpg", "short9.jpg", "short10.jpg",
+            "outerwear3.jpg", "outerwear4.jpg", "outerwear5.jpg", "outerwear9.jpg", "outerwear10.jpg", "outerwear11.jpg", "outerwear12.jpg", "outerwear13.jpg",
+            "blazer2.jpg", "blazer5.jpg", "blazer11.jpg", "blazer12.jpg", "blazer13.jpg", "blazer14.jpg", "blazer15.jpg",
+            "skirt6.jpg", "skirt7.jpg", "skirt8.jpg", "skirt9.jpg", "skirt10.jpg"
         };
 
         if (productRepository.count() == 0) {
             for (int i = 0; i < images.length; i++) {
                 String img = images[i];
                 String name = formatProductName(img);
+                String brand = formatProductBrand(img);
                 
                 Product p = Product.builder()
                     .slug(img.replace(".jpg", "").replace(".png", "") + "-" + UUID.randomUUID().toString().substring(0, 8))
@@ -91,7 +111,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .quantity(100)
                     .shortDescription("This is " + name)
                     .description("Detailed description for " + name)
-                    .productType("Apparel")
+                    .productType(brand)
                     .published(true)
                     .disableOutOfStock(false)
                     .rating(4.5)
@@ -110,9 +130,40 @@ public class DatabaseSeeder implements CommandLineRunner {
                 
                 galleryRepository.save(g);
 
+                Category targetCategory = tops; // default
+                String lowerImg = img.toLowerCase();
+                if (lowerImg.contains("dress")) {
+                    targetCategory = dresses;
+                } else if (lowerImg.contains("skirt")) {
+                    targetCategory = skirts;
+                } else if (lowerImg.contains("blazer")) {
+                    targetCategory = blazers;
+                } else if (lowerImg.contains("knitwear")) {
+                    targetCategory = knitwear;
+                } else if (lowerImg.contains("outerwear")) {
+                    targetCategory = outerwear;
+                } else if (lowerImg.contains("pants")) {
+                    targetCategory = pants;
+                } else if (lowerImg.contains("blouse")) {
+                    targetCategory = shirts;
+                } else if (lowerImg.contains("top")) {
+                    targetCategory = tops;
+                } else if (lowerImg.contains("jeans")) {
+                    targetCategory = jeans;
+                } else if (lowerImg.contains("short")) {
+                    targetCategory = shorts;
+                } else if (lowerImg.contains("sweater") || lowerImg.contains("cardigan")) {
+                    targetCategory = cardigans;
+                } else if (lowerImg.contains("bag")) {
+                    // Though user said keep accessories empty, we have a bag image. 
+                    // Let's just put it in accessories or Tops depending on strictness.
+                    // User said "shoes và accessories tạm thời để trống", so let's put bag in Tops to keep Accessories empty.
+                    targetCategory = tops;
+                }
+
                 ProductCategory pc = ProductCategory.builder()
                     .product(p)
-                    .category(categories.get(i % categories.size()))
+                    .category(targetCategory)
                     .build();
                 
                 productCategoryRepository.save(pc);
@@ -179,7 +230,188 @@ public class DatabaseSeeder implements CommandLineRunner {
         System.out.println("Seeded " + images.length + " products, categories, users, and reviews.");
     }
 
+    private String formatProductBrand(String filename) {
+        if (filename.contains("cardigans")) {
+            String[] brands = {"Zara", "H&M", "Mango", "Gucci", "Chanel", "Prada", "Dior", "Louis Vuitton", "Burberry", "Versace"};
+            try {
+                int index = Integer.parseInt(filename.replace("cardigans", "").replace(".jpg", "")) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Zara";
+            }
+        } else if (filename.contains("wjeans")) {
+            String[] brands = {"Levi's", "Diesel", "Calvin Klein", "Guess", "Tommy Hilfiger", "Wrangler", "Lee", "True Religion", "G-Star RAW", "Balenciaga"};
+            try {
+                String numStr = filename.replace("wjeans", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Levi's";
+            }
+        } else if (filename.contains("knitwear")) {
+            String[] brands = {"Uniqlo", "Ralph Lauren", "Tommy Hilfiger", "Massimo Dutti", "Everlane", "Madewell", "J.Crew", "COS", "Aritzia", "Reiss"};
+            try {
+                String numStr = filename.replace("knitwear", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Uniqlo";
+            }
+        } else if (filename.contains("pants")) {
+            String[] brands = {"Dickies", "Carhartt", "Lululemon", "Nike", "Adidas", "Puma", "Under Armour", "ZARA", "Mango", "H&M"};
+            try {
+                String numStr = filename.replace("pants", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "ZARA";
+            }
+        } else if (filename.contains("short")) {
+            String[] brands = {"Vans", "Hollister", "American Eagle", "Gap", "Old Navy", "PacSun", "Roxy", "Billabong", "Volcom", "O'Neill"};
+            try {
+                String numStr = filename.replace("shorts", "").replace("short", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Vans";
+            }
+        } else if (filename.contains("outerwear")) {
+            String[] brands = {"The North Face", "Patagonia", "Columbia", "Arc'teryx", "Moncler", "Canada Goose", "Marmot", "Salomon", "Helly Hansen", "Burburry"};
+            try {
+                String numStr = filename.replace("outerwear", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "The North Face";
+            }
+        } else if (filename.contains("blazer")) {
+            String[] brands = {"Armani", "Hugo Boss", "Tommy Hilfiger", "Calvin Klein", "Ralph Lauren", "Saint Laurent", "Gucci", "Givenchy", "Balmain", "Tom Ford"};
+            try {
+                String numStr = filename.replace("blazer", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Armani";
+            }
+        } else if (filename.contains("skirt")) {
+            String[] brands = {"Miu Miu", "Dior", "Chanel", "Fendi", "Valentino", "Versace", "Prada", "Burberry", "Chloe", "Alexander McQueen"};
+            try {
+                String numStr = filename.replace("new_skirt_", "").replace("skirt", "").replace(".jpg", "").replace(".png", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return brands[index % brands.length];
+            } catch (Exception e) {
+                return "Miu Miu";
+            }
+        }
+        return "Mango";
+    }
+
     private String formatProductName(String filename) {
+        if (filename.contains("cardigans")) {
+            String[] names = {
+                "Classic Knit Cardigan", "Oversized Wool Sweater", "V-Neck Cashmere Cardigan", 
+                "Chunky Cable Knit Sweater", "Ribbed Crop Cardigan", "Turtleneck Pullover", 
+                "Fuzzy Mohair Cardigan", "Striped Cotton Sweater", "Button-Up Long Cardigan", "Wrap Belted Sweater"
+            };
+            try {
+                int index = Integer.parseInt(filename.replace("cardigans", "").replace(".jpg", "")) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Fashion Cardigan";
+            }
+        } else if (filename.contains("wjeans")) {
+            String[] names = {
+                "High-Waisted Skinny Jeans", "Classic Straight Leg Jeans", "Flared Denim Jeans", 
+                "Vintage Bootcut Jeans", "Ripped Boyfriend Jeans", "Distressed Mom Jeans", 
+                "Cropped Wide Leg Jeans", "Stretch Jeggings", "Low-Rise Flare Jeans", "Acid Wash Denim"
+            };
+            try {
+                String numStr = filename.replace("wjeans", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Premium Women's Jeans";
+            }
+        } else if (filename.contains("knitwear")) {
+            String[] names = {
+                "Cozy Oversized Knitwear", "Ribbed Turtleneck Sweater", "Chunky Cable Knit", 
+                "Soft Cashmere Blend", "Cropped Knit Jumper", "V-Neck Pullover", 
+                "Relaxed Fit Sweater", "Fine Gauge Knit Top", "Mohair Blend Knitwear", "Textured Pattern Sweater"
+            };
+            try {
+                String numStr = filename.replace("knitwear", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Premium Knitwear";
+            }
+        } else if (filename.contains("pants")) {
+            String[] names = {
+                "Classic Chino Pants", "High-Waisted Wide Leg Trousers", "Cargo Utility Pants", 
+                "Tailored Slim Fit Pants", "Linen Summer Trousers", "Jogger Sweatpants", 
+                "Faux Leather Trousers", "Pleated Front Pants", "Cropped Culottes", "Athletic Track Pants"
+            };
+            try {
+                String numStr = filename.replace("pants", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Stylish Women's Pants";
+            }
+        } else if (filename.contains("short")) {
+            String[] names = {
+                "High-Rise Denim Shorts", "Linen Summer Shorts", "Athletic Running Shorts", 
+                "Distressed Cutoff Shorts", "Bermuda Shorts", "Frayed Hem Shorts", 
+                "Paperbag Waist Shorts", "Biker Shorts", "Cotton Lounge Shorts", "Floral Print Shorts"
+            };
+            try {
+                String numStr = filename.replace("shorts", "").replace("short", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Casual Women's Shorts";
+            }
+        } else if (filename.contains("outerwear")) {
+            String[] names = {
+                "Waterproof Trekking Jacket", "Lightweight Windbreaker", "Insulated Winter Parka", 
+                "Fleece Zip-Up Jacket", "Classic Trench Coat", "Quilted Puffer Jacket", 
+                "Faux Fur Lined Coat", "Double Breasted Peacoat", "Heavyweight Parka Coat", "Hooded Rain Jacket"
+            };
+            try {
+                String numStr = filename.replace("outerwear", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Premium Outerwear";
+            }
+        } else if (filename.contains("blazer")) {
+            String[] names = {
+                "Tailored Fit Blazer", "Double Breasted Blazer", "Casual Linen Blazer", 
+                "Oversized Boyfriend Blazer", "Classic Wool Blazer", "Tweed Plaid Blazer", 
+                "Velvet Evening Blazer", "Cropped Suit Blazer", "Slim Fit Navy Blazer", "Belted Safari Blazer"
+            };
+            try {
+                String numStr = filename.replace("blazer", "").replace(".jpg", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Designer Women's Blazer";
+            }
+        } else if (filename.contains("skirt")) {
+            String[] names = {
+                "Pleated Mini Skirt", "A-Line Midi Skirt", "Denim Pencil Skirt", 
+                "Floral Wrap Skirt", "Leather Maxi Skirt", "Tweed Mini Skirt", 
+                "Silk Slip Skirt", "High-Waisted Ruffle Skirt", "Checkered Skort", "Satin Midi Skirt"
+            };
+            try {
+                String numStr = filename.replace("new_skirt_", "").replace("skirt", "").replace(".jpg", "").replace(".png", "");
+                int index = numStr.isEmpty() ? 0 : Integer.parseInt(numStr) - 1;
+                return names[index % names.length];
+            } catch (Exception e) {
+                return "Stylish Women's Skirt";
+            }
+        }
+        
         String baseName = filename.replace(".jpg", "").replace(".png", "").replace("_", " ");
         baseName = baseName.replaceAll("[0-9]", "").trim(); // remove numbers
         String[] words = baseName.split(" ");

@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart'; // 1. Thêm thư viện SDK
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart'; // Thêm thư viện Facebook
 import 'auth_service.dart';
 import 'main_screen.dart';
+import 'register_screen.dart'; // Added for redirect
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Vui lòng nhập đầy đủ thông tin!', Colors.orange);
+      _showSnackBar('Please fill in all fields!', Colors.orange);
       return;
     }
 
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthService.userName = name;
       AuthService.userEmail = email;
       AuthService.userPhotoUrl = null;
-      _showSnackBar('Đăng nhập thành công! Chào mừng $name', Colors.green);
+      _showSnackBar('Login successful! Welcome $name', Colors.green);
       print("Token JWT nhận về: $jwtToken");
       
       Future.delayed(const Duration(seconds: 1), () {
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       });
     } else {
-      _showSnackBar('Đăng nhập thất bại! Sai tài khoản hoặc lỗi kết nối mạng.', Colors.red);
+      _showSnackBar('Login failed! Incorrect credentials or network error.', Colors.red);
     }
   }
 
@@ -107,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
 
-        if (result != null) {
+        if (result is Map) {
           // XÁC THỰC CHÉO THÀNH CÔNG VỚI GOOGLE SERVER
           String jwtToken = result['token'];
           AuthService.jwtToken = jwtToken;
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
           AuthService.userEmail = googleUser.email;
           AuthService.userPhotoUrl = googleUser.photoUrl;
 
-          _showSnackBar('Đăng nhập Google thành công! Chào mừng $name', Colors.green);
+          _showSnackBar('Google login successful! Welcome $name', Colors.green);
           print("JWT hệ thống cấp sau khi đối chiếu Google: $jwtToken");
           
           Future.delayed(const Duration(seconds: 1), () {
@@ -127,8 +128,17 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           });
+        } else if (result is String) {
+          _showSnackBar(result, Colors.red);
+          if (result.contains("chưa được đăng ký")) {
+             Future.delayed(const Duration(seconds: 2), () {
+               if (mounted) {
+                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+               }
+             });
+          }
         } else {
-          _showSnackBar('Server Spring Boot từ chối xác thực tài khoản Google này!', Colors.red);
+          _showSnackBar('Server rejected Google authentication!', Colors.red);
         }
       } else {
         setState(() {
@@ -139,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
-      _showSnackBar('Lỗi kích hoạt SDK Google: $error', Colors.red);
+      _showSnackBar('Google SDK error: $error', Colors.red);
       print("Chi tiết lỗi SDK Google: $error");
     }
   }
@@ -148,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleFacebookLogin() async {
     try {
       final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
+        permissions: ['public_profile'],
       );
 
       if (result.status == LoginStatus.success) {
@@ -164,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
 
-        if (apiResult != null) {
+        if (apiResult is Map) {
           // XÁC THỰC CHÉO THÀNH CÔNG
           String jwtToken = apiResult['token'];
           AuthService.jwtToken = jwtToken;
@@ -173,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
           AuthService.userEmail = null;
           AuthService.userPhotoUrl = null;
 
-          _showSnackBar('Đăng nhập Facebook thành công! Chào mừng $name', Colors.green);
+          _showSnackBar('Facebook login successful! Welcome $name', Colors.green);
           print("JWT hệ thống cấp sau khi đối chiếu Facebook: $jwtToken");
           
           Future.delayed(const Duration(seconds: 1), () {
@@ -184,19 +194,28 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           });
+        } else if (apiResult is String) {
+          _showSnackBar(apiResult, Colors.red);
+          if (apiResult.contains("chưa được đăng ký")) {
+             Future.delayed(const Duration(seconds: 2), () {
+               if (mounted) {
+                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+               }
+             });
+          }
         } else {
-          _showSnackBar('Server Spring Boot từ chối xác thực tài khoản Facebook này!', Colors.red);
+          _showSnackBar('Server rejected Facebook authentication!', Colors.red);
         }
       } else if (result.status == LoginStatus.cancelled) {
         // Đã hủy đăng nhập
       } else {
-        _showSnackBar('Lỗi đăng nhập Facebook: ${result.message}', Colors.red);
+        _showSnackBar('Facebook login error: ${result.message}', Colors.red);
       }
     } catch (error) {
       setState(() {
         _isLoading = false;
       });
-      _showSnackBar('Lỗi kích hoạt SDK Facebook: $error', Colors.red);
+      _showSnackBar('Facebook SDK error: $error', Colors.red);
       print("Chi tiết lỗi SDK Facebook: $error");
     }
   }

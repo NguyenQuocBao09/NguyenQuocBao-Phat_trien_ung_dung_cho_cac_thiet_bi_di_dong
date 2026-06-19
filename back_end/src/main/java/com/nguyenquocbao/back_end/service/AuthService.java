@@ -68,66 +68,74 @@ public class AuthService {
                 .build();
     }
 
-    // 3. LOGIC XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ BẰNG GOOGLE
+    // 3. LOGIC XỬ LÝ ĐĂNG NHẬP BẰNG GOOGLE
     public AuthResponse loginWithGoogle(String googleToken) {
-        // Gọi sang OAuth2Service để verify token với server Google và lấy thông tin user
         Map<String, Object> googleUserInfo = oAuth2Service.verifyGoogleToken(googleToken);
-        
         String email = (String) googleUserInfo.get("email");
         String name = (String) googleUserInfo.get("name");
 
-        // Xử lý hoặc lấy User từ DB lên, hoặc tự động đăng ký mới nếu chưa tồn tại
-        User user = processOAuth2User(email, name, Provider.GOOGLE);
-
-        // Sinh mã token JWT của riêng hệ thống bạn cấp cho thiết bị
+        User user = processOAuth2User(email, name, Provider.GOOGLE, true);
         String jwtToken = jwtTokenProvider.generateToken(user);
-
-        return AuthResponse.builder()
-                .token(jwtToken)
-                .name(user.getName())
-                .email(user.getEmail())
-                .build();
+        return AuthResponse.builder().token(jwtToken).name(user.getName()).email(user.getEmail()).build();
     }
 
-    // 4. LOGIC XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ BẰNG FACEBOOK
+    // 4. LOGIC XỬ LÝ ĐĂNG KÝ BẰNG GOOGLE
+    public AuthResponse registerWithGoogle(String googleToken) {
+        Map<String, Object> googleUserInfo = oAuth2Service.verifyGoogleToken(googleToken);
+        String email = (String) googleUserInfo.get("email");
+        String name = (String) googleUserInfo.get("name");
+
+        User user = processOAuth2User(email, name, Provider.GOOGLE, false);
+        String jwtToken = jwtTokenProvider.generateToken(user);
+        return AuthResponse.builder().token(jwtToken).name(user.getName()).email(user.getEmail()).build();
+    }
+
+    // 5. LOGIC XỬ LÝ ĐĂNG NHẬP BẰNG FACEBOOK
     public AuthResponse loginWithFacebook(String facebookToken) {
-        // Gọi sang OAuth2Service để verify token với Facebook Graph API
         Map<String, Object> facebookUserInfo = oAuth2Service.verifyFacebookToken(facebookToken);
-        
         String email = (String) facebookUserInfo.get("email");
         String name = (String) facebookUserInfo.get("name");
+        if (email == null) { email = facebookUserInfo.get("id") + "@facebook.com"; }
 
-        // Nếu Facebook không trả về email (do user ẩn), lấy tạm ID làm email định danh hệ thống
-        if (email == null) {
-            email = facebookUserInfo.get("id") + "@facebook.com";
-        }
-
-        User user = processOAuth2User(email, name, Provider.FACEBOOK);
+        User user = processOAuth2User(email, name, Provider.FACEBOOK, true);
         String jwtToken = jwtTokenProvider.generateToken(user);
-
-        return AuthResponse.builder()
-                .token(jwtToken)
-                .name(user.getName())
-                .email(user.getEmail())
-                .build();
+        return AuthResponse.builder().token(jwtToken).name(user.getName()).email(user.getEmail()).build();
     }
 
-    // HÀM DÙNG CHUNG: KIỂM TRA VÀ TỰ ĐỘNG ĐĂNG KÝ USER MẠNG XÃ HỘI VÀO DATABASE
-    private User processOAuth2User(String email, String name, Provider provider) {
-        return userRepository.findByEmail(email)
+    // 6. LOGIC XỬ LÝ ĐĂNG KÝ BẰNG FACEBOOK
+    public AuthResponse registerWithFacebook(String facebookToken) {
+        Map<String, Object> facebookUserInfo = oAuth2Service.verifyFacebookToken(facebookToken);
+        String email = (String) facebookUserInfo.get("email");
+        String name = (String) facebookUserInfo.get("name");
+        if (email == null) { email = facebookUserInfo.get("id") + "@facebook.com"; }
+
+        User user = processOAuth2User(email, name, Provider.FACEBOOK, false);
+        String jwtToken = jwtTokenProvider.generateToken(user);
+        return AuthResponse.builder().token(jwtToken).name(user.getName()).email(user.getEmail()).build();
+    }
+
+    // HÀM DÙNG CHUNG: KIỂM TRA ĐĂNG NHẬP / ĐĂNG KÝ USER MẠNG XÃ HỘI
+    private User processOAuth2User(String email, String name, Provider provider, boolean isLogin) {
+        return userRepository.findFirstByEmail(email)
                 .map(existingUser -> {
                     // Nếu tài khoản đã tồn tại nhưng trước đó đăng ký bằng nguồn khác (ví dụ LOCAL)
                     if (!existingUser.getProvider().equals(provider)) {
                         throw new RuntimeException("Email này đã được đăng ký bằng phương thức khác: " + existingUser.getProvider());
                     }
+                    if (!isLogin) {
+                        throw new RuntimeException("Tài khoản đã tồn tại. Vui lòng đăng nhập!");
+                    }
                     return existingUser;
                 })
                 .orElseGet(() -> {
-                    // Nếu chưa tồn tại tài khoản, tiến hành tự động tạo mới (Auto-Register)
+                    if (isLogin) {
+                        throw new RuntimeException("Tài khoản chưa được đăng ký. Vui lòng đăng ký trước!");
+                    }
+                    // Nếu chưa tồn tại tài khoản và đang thực hiện đăng ký, tạo mới
                     User newUser = User.builder()
                             .name(name)
                             .email(email)
-                            .password(null) // Tài khoản mạng xã hội không lưu mật khẩu trên hệ thống của bạn
+                            .password(null) // Tài khoản mạng xã hội không lưu mật khẩu
                             .provider(provider)
                             .build();
                     return userRepository.save(newUser);

@@ -332,6 +332,12 @@ class _BagScreenState extends State<BagScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
+                        if (cartService.items.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Your bag is empty. Please add some items.')),
+                          );
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const CheckoutScreen()),

@@ -3,9 +3,85 @@ import 'auth_service.dart';
 import 'my_orders_screen.dart';
 import 'my_reviews_screen.dart';
 import 'settings_screen.dart';
+import 'shipping_addresses_screen.dart';
+import 'payment_methods_screen.dart';
+import 'promocodes_screen.dart';
+import 'services/checkout_service.dart';
+import 'services/product_service.dart';
+import 'welcome_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int _orderCount = 0;
+  int _reviewCount = 0;
+  int _addressCount = 0;
+  String _paymentSubtitle = 'No default payment';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+    checkoutService.addListener(_onCheckoutDataUpdated);
+  }
+
+  @override
+  void dispose() {
+    checkoutService.removeListener(_onCheckoutDataUpdated);
+    super.dispose();
+  }
+
+  void _onCheckoutDataUpdated() {
+    if (mounted) {
+      setState(() {
+        _addressCount = checkoutService.addresses.length;
+        if (checkoutService.useCashOnDelivery) {
+          _paymentSubtitle = 'Cash on Delivery';
+        } else {
+          final defaultCard = checkoutService.defaultPaymentCard;
+          if (defaultCard != null) {
+            String masked = defaultCard.cardNumber.replaceAll(' ', '');
+            if (masked.length >= 4) {
+              _paymentSubtitle = '${defaultCard.brand} **${masked.substring(masked.length - 4)}';
+            } else {
+              _paymentSubtitle = defaultCard.brand;
+            }
+          } else {
+            _paymentSubtitle = 'No default payment';
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchData() async {
+    await checkoutService.fetchCheckoutData();
+    final orders = await checkoutService.fetchOrders();
+    final reviews = await ProductService().fetchUserReviews();
+    
+    if (mounted) {
+      setState(() {
+        _orderCount = orders.length;
+        _reviewCount = reviews.length;
+      });
+      _onCheckoutDataUpdated(); // trigger update for addresses and payment
+    }
+  }
+
+  void _logout() async {
+    await AuthService.signOut();
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +154,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 32),
               _buildListTile(
                 title: 'My orders',
-                subtitle: 'Already have 12 orders',
+                subtitle: _orderCount > 0 ? 'Already have $_orderCount orders' : 'No orders yet',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -88,22 +164,37 @@ class ProfileScreen extends StatelessWidget {
               ),
               _buildListTile(
                 title: 'Shipping addresses',
-                subtitle: '3 addresses',
-                onTap: () {},
+                subtitle: '$_addressCount addresses',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ShippingAddressesScreen()),
+                  );
+                },
               ),
               _buildListTile(
                 title: 'Payment methods',
-                subtitle: 'Visa  **34',
-                onTap: () {},
+                subtitle: _paymentSubtitle,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
+                  );
+                },
               ),
               _buildListTile(
                 title: 'Promocodes',
                 subtitle: 'You have special promocodes',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PromocodesScreen()),
+                  );
+                },
               ),
               _buildListTile(
                 title: 'My reviews',
-                subtitle: 'Reviews for 4 items',
+                subtitle: _reviewCount > 0 ? 'Reviews for $_reviewCount items' : 'No reviews yet',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -121,7 +212,22 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    elevation: 0,
+                  ),
+                  child: const Text('LOG OUT', style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),

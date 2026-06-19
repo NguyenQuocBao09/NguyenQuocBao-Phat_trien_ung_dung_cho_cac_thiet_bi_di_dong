@@ -12,6 +12,7 @@ class ShippingAddressFormScreen extends StatefulWidget {
 }
 
 class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _addressController;
   late TextEditingController _cityController;
@@ -42,6 +43,10 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
   }
 
   void _saveAddress() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final newAddress = UserAddress(
       id: widget.addressToEdit?.id ?? '',
       fullName: _nameController.text,
@@ -84,39 +89,67 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildTextField(_nameController, 'Full name'),
-            const SizedBox(height: 16),
-            _buildTextField(_addressController, 'Address'),
-            const SizedBox(height: 16),
-            _buildTextField(_cityController, 'City'),
-            const SizedBox(height: 16),
-            _buildTextField(_stateController, 'State/Province/Region'),
-            const SizedBox(height: 16),
-            _buildTextField(_zipCodeController, 'Zip Code (Postal Code)'),
-            const SizedBox(height: 16),
-            _buildTextField(_countryController, 'Country', suffixIcon: const Icon(Icons.keyboard_arrow_right, color: Colors.grey)),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _saveAddress,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                ),
-                child: const Text('SAVE ADDRESS', style: TextStyle(color: Colors.white, fontSize: 16)),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _buildTextField(
+                _nameController, 
+                'Full name', 
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter full name' : null,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              _buildTextField(
+                _addressController, 
+                'Address', 
+                validator: (val) => val == null || val.trim().length < 5 ? 'Address must be at least 5 characters' : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _cityController, 
+                'City',
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter city' : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _stateController, 
+                'State/Province/Region',
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter state/region' : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _zipCodeController, 
+                'Zip Code (Postal Code)',
+                validator: (val) => val == null || val.trim().length < 4 ? 'Invalid zip code' : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                _countryController, 
+                'Country', 
+                suffixIcon: const Icon(Icons.keyboard_arrow_right, color: Colors.grey),
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter country' : null,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _saveAddress,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                  ),
+                  child: const Text('SAVE ADDRESS', style: TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {Widget? suffixIcon}) {
+  Widget _buildTextField(TextEditingController controller, String label, {Widget? suffixIcon, String? Function(String?)? validator}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -125,8 +158,9 @@ class _ShippingAddressFormScreenState extends State<ShippingAddressFormScreen> {
           BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5),
         ],
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
+        validator: validator,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.grey, fontSize: 12),

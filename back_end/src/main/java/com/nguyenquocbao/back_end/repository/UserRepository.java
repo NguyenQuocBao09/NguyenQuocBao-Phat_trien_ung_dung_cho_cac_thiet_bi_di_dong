@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     // 1. Tìm kiếm người dùng dựa vào Email (Trả về dạng Optional để tránh lỗi NullPointerException)
-    Optional<User> findByEmail(String email);
+    Optional<User> findFirstByEmail(String email);
 
     // 2. Kiểm tra xem Email này đã được ai đăng ký trong Database chưa (Trả về true/false)
     Boolean existsByEmail(String email);

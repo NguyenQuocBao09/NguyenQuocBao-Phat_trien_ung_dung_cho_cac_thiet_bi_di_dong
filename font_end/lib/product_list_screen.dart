@@ -7,8 +7,9 @@ import 'filters_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String categoryName;
+  final String department;
 
-  const ProductListScreen({super.key, required this.categoryName});
+  const ProductListScreen({super.key, required this.categoryName, this.department = 'Women'});
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -16,6 +17,7 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   bool isGridView = false;
+  bool _isAscending = true;
 
   final List<String> chips = ['T-shirts', 'Crop tops', 'Sleeveless', 'Blouses'];
 
@@ -25,8 +27,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = ProductService().fetchTopRatedProductsByCategory(widget.categoryName);
+    if (widget.department == 'Men' || widget.department == 'Kids') {
+      _productsFuture = Future.value([]);
+    } else {
+      _productsFuture = ProductService().fetchTopRatedProductsByCategory(widget.categoryName);
+    }
     _loadFavorites();
+    FavoriteService.favoritesChangedNotifier.addListener(_onFavoritesChanged);
+  }
+
+  void _onFavoritesChanged() {
+    _loadFavorites();
+  }
+
+  @override
+  void dispose() {
+    FavoriteService.favoritesChangedNotifier.removeListener(_onFavoritesChanged);
+    super.dispose();
   }
 
   Future<void> _loadFavorites() async {
@@ -67,14 +84,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
           _favoriteProductIds.remove(productId);
         }
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi cập nhật yêu thích')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating favorites')),
+        );
     } else if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isCurrentlyFavorite ? 'Đã xóa khỏi danh sách yêu thích' : 'Đã thêm vào danh sách yêu thích'),
-          duration: const Duration(seconds: 2),
+          content: Text(isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites'),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -153,9 +170,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.swap_vert, size: 24),
-                const SizedBox(width: 8),
-                const Text('Price: lowest to high', style: TextStyle(fontSize: 14)),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isAscending = !_isAscending;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.swap_vert, size: 24),
+                      const SizedBox(width: 8),
+                      Text(_isAscending ? 'Price: lowest to high' : 'Price: highest to low', style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   icon: Icon(isGridView ? Icons.view_list : Icons.grid_view, size: 24),
@@ -202,7 +230,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     );
                   }
 
-                  final products = snapshot.data!;
+                  final products = List<Product>.from(snapshot.data!);
+                  products.sort((a, b) {
+                    final priceA = a.salePrice ?? a.price ?? 0.0;
+                    final priceB = b.salePrice ?? b.price ?? 0.0;
+                    return _isAscending ? priceA.compareTo(priceB) : priceB.compareTo(priceA);
+                  });
                   return isGridView ? _buildGridView(products) : _buildListView(products);
                 },
               ),

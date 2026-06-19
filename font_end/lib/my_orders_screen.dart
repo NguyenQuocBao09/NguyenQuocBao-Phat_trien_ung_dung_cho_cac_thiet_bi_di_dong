@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_end/models/order.dart';
 import 'package:font_end/services/checkout_service.dart';
+import 'package:font_end/order_details_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
@@ -172,7 +173,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Order №${order.id}',
+                'Order №${order.id.length > 8 ? order.id.substring(0, 8) : order.id}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -247,19 +248,63 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              Row(
+                children: [
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderDetailsScreen(orderId: order.id),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      side: const BorderSide(color: Colors.black),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                    ),
+                    child: const Text(
+                      'Details',
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                    ),
                   ),
-                  side: const BorderSide(color: Colors.black),
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                ),
-                child: const Text(
-                  'Details',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                ),
+                  if (order.status == 'Processing') ...[
+                    const SizedBox(width: 8),
+                    OutlinedButton(
+                      onPressed: () async {
+                        bool success = await checkoutService.cancelOrder(order.id);
+                        if (success) {
+                          _refreshOrders();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Order cancelled')),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to cancel order')),
+                            );
+                          }
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Text(
                 order.status,
